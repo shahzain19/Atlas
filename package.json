@@ -2,9 +2,8 @@
   "name": "atlas",
   "version": "1.0.0",
   "description": "Universal software platform for intelligent machines",
-  "main": "index.js",
   "bin": {
-    "atlas": "./atlas-cli/dist/index.js"
+    "atlas": "./atlas-cli/dist/atlas-cli/src/index.js"
   },
   "directories": {
     "doc": "docs"
@@ -28,7 +27,6 @@
     "@types/ws": "^8.18.1",
     "commander": "^15.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.3",
     "uuid": "^14.0.1",
     "ws": "^8.18.3"
   },
@@ -36,6 +34,7 @@
     "@types/jest": "^30.0.0",
     "concurrently": "^10.0.3",
     "jest": "^30.4.2",
-    "ts-jest": "^29.4.11"
+    "ts-jest": "^29.4.11",
+    "typescript": "^5.5.0"
   }
 }

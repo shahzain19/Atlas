@@ -31,6 +31,7 @@ COPY atlas-studio/ atlas-studio/
 COPY atlas-supabase/ atlas-supabase/
 COPY atlas-tests/ atlas-tests/
 COPY main.ts ./
+RUN npx tsc --skipLibCheck
 RUN npm test
 
 FROM base AS runtime

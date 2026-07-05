@@ -12,6 +12,10 @@
     "node_modules",
     "dist",
     "atlas-studio",
+    "atlas-simulation",
+    "atlas-supabase",
+    "atlas-ai-py",
+    "atlas-perception-py",
     "build",
     "atlas-navigation-cpp/build",
     "atlas-hardware-cpp/build"
