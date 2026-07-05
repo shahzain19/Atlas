@@ -91,8 +91,21 @@ setTimeout(async () => {
 // 🛰️ Simulate a GPS update after 4.5 seconds
 setTimeout(async () => {
   console.log("\n--- SIMULATING GPS UPDATE ---");
-  const coords = await atlas.hardware.readSensor("NMEAGPS");
-  
+  let coords: any;
+  try {
+    coords = await atlas.hardware.readSensor("NMEAGPS");
+  } catch (err) {
+    console.warn("[main] NMEAGPS read failed:", (err as Error).message);
+    console.log("[main] Falling back to synthetic GPS position for demo.");
+    const t = Date.now() / 1000;
+    coords = {
+      lat: 37.7749 + Math.sin(t) * 0.001,
+      lng: -122.4194 + Math.cos(t) * 0.001,
+      alt: 10,
+      accuracy: 2.5,
+    };
+  }
+
   // Update state
   await atlas.emit({
     type: "GPS_UPDATE",

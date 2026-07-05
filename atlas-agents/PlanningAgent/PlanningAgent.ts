@@ -19,8 +19,33 @@ export class PlanningAgent extends BaseAgent {
     console.log("Planning Agent initialized");
   }
 
-  handle(_event: Event): Decision[] {
-    return [];
+  handle(event: Event): Decision[] {
+    switch (event.type) {
+      case "REQUEST_PLAN":
+        if (!event.payload?.goal) return [];
+        return [
+          {
+            name: "PlanTasksDecision",
+            confidence: 0.9,
+            execute: () => {
+              void this.planTasks(event.payload.goal as string);
+            },
+          },
+        ];
+      case "REQUEST_ROUTE":
+        if (!event.payload?.start || !event.payload?.end) return [];
+        return [
+          {
+            name: "PlanRouteDecision",
+            confidence: 0.9,
+            execute: () => {
+              void this.planRoute(event.payload.start as any, event.payload.end as any);
+            },
+          },
+        ];
+      default:
+        return [];
+    }
   }
 
   planTasks(goal: string): Task[] {

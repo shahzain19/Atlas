@@ -102,4 +102,46 @@ describe("LocalizationAgent", () => {
     newPose.x = 999;
     expect(agent.getPose().x).toBe(100);
   });
+
+  it("should handle GPS_UPDATE event", () => {
+    const agent = new LocalizationAgent();
+    const gps: GPSData = {
+      latitude: 37.7749,
+      longitude: -122.4194,
+      timestamp: 1234,
+    };
+    const event = { type: "GPS_UPDATE", timestamp: Date.now(), payload: gps };
+    const decisions = agent.handle(event);
+    expect(decisions).toHaveLength(1);
+    expect(decisions[0].name).toBe("GPSLocalizationDecision");
+    expect(decisions[0].confidence).toBe(0.9);
+    const pose = agent.getPose();
+    expect(pose.x).toBe(-122.4194 * 100000);
+    expect(pose.y).toBe(37.7749 * 100000);
+  });
+
+  it("should handle IMU_UPDATE event", () => {
+    const agent = new LocalizationAgent();
+    const imu: IMUData = {
+      acceleration: { x: 0.1, y: 0.2, z: 9.81 },
+      gyroscope: { x: 0.01, y: 0.02, z: 0.03 },
+      timestamp: 9999,
+    };
+    const event = { type: "IMU_UPDATE", timestamp: Date.now(), payload: imu };
+    const decisions = agent.handle(event);
+    expect(decisions).toHaveLength(1);
+    expect(decisions[0].name).toBe("IMUAttitudeDecision");
+    expect(decisions[0].confidence).toBe(0.7);
+    const pose = agent.getPose();
+    expect(pose.roll).toBeCloseTo(0.01);
+    expect(pose.pitch).toBeCloseTo(0.02);
+    expect(pose.yaw).toBeCloseTo(0.03);
+  });
+
+  it("should return empty decisions for unknown event types", () => {
+    const agent = new LocalizationAgent();
+    const event = { type: "TICK", timestamp: Date.now(), payload: {} };
+    const decisions = agent.handle(event);
+    expect(decisions).toEqual([]);
+  });
 });

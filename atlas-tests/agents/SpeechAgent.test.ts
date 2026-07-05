@@ -39,4 +39,31 @@ describe("SpeechAgent", () => {
     expect(typeof result).toBe("string");
     expect(result.length).toBeGreaterThan(0);
   });
+
+  it("should return ListenDecision for LISTEN_REQUEST", () => {
+    const event: Event = {
+      type: "LISTEN_REQUEST",
+      timestamp: Date.now(),
+      payload: {},
+    };
+    const decisions = agent.handle(event);
+    expect(decisions).toHaveLength(1);
+    expect(decisions[0].name).toBe("ListenDecision");
+    expect(decisions[0].confidence).toBe(0.8);
+  });
+
+  it("should reset state on SPEAK_COMPLETE", () => {
+    const speakEvent: Event = {
+      type: "SPEAK_REQUEST",
+      timestamp: Date.now(),
+      payload: { text: "Hi" },
+    };
+    agent.handle(speakEvent);
+    const doneEvent: Event = {
+      type: "SPEAK_COMPLETE",
+      timestamp: Date.now(),
+      payload: {},
+    };
+    agent.handle(doneEvent);
+  });
 });

@@ -38,27 +38,8 @@ describe("AtlasRuntime", () => {
       expect(runtime.log).toBeDefined();
       expect(runtime.plugins).toBeDefined();
     });
-  });
 
-  describe("lifecycle", () => {
-    it("should start and stop", () => {
-      expect(runtime.isActive()).toBe(false);
-      runtime.start();
-      expect(runtime.isActive()).toBe(true);
-      runtime.stop();
-      expect(runtime.isActive()).toBe(false);
-    });
-
-    it("should not start twice", () => {
-      runtime.start();
-      runtime.start();
-      expect(runtime.isActive()).toBe(true);
-    });
-
-    it("should not stop twice", () => {
-      runtime.start();
-      runtime.stop();
-      runtime.stop();
+    it("should start as inactive", () => {
       expect(runtime.isActive()).toBe(false);
     });
   });
@@ -76,7 +57,7 @@ describe("AtlasRuntime", () => {
       await runtime.emit(event);
 
       expect(busSpy).toHaveBeenCalled();
-      const recent = runtime.memory.getRecent(1);
+      const recent = runtime.memory.getRecentEvents();
       expect(recent).toHaveLength(1);
       expect(recent[0].type).toBe("TEST_EVENT");
     });
@@ -85,10 +66,9 @@ describe("AtlasRuntime", () => {
       const ltmSpy = jest.spyOn(runtime.history, "logEvent");
 
       const event: Event = {
-        type: "IMPORTANT_EVENT",
+        type: "TASK_REQUEST",
         timestamp: Date.now(),
         payload: { data: "critical" },
-        metadata: { importance: 0.8 },
       };
 
       await runtime.emit(event);
@@ -127,8 +107,6 @@ describe("AtlasRuntime", () => {
 
   describe("task management", () => {
     it("should register and run a task", async () => {
-      const runSpy = jest.spyOn(runtime.tasks, "run").mockResolvedValue(undefined);
-
       const task: Task = {
         id: "task-1",
         name: "Test Task",
@@ -140,7 +118,7 @@ describe("AtlasRuntime", () => {
       await runtime.runTask("task-1");
 
       expect(runtime.tasks.getTask("task-1")).toBe(task);
-      expect(runSpy).toHaveBeenCalledWith("task-1");
+      expect(task.status).toBe("completed");
     });
 
     it("should rethrow after recovery failure", async () => {

@@ -31,8 +31,29 @@ export class LocalizationAgent extends BaseAgent {
     console.log("Localization Agent initialized");
   }
 
-  handle(_event: Event): Decision[] {
-    return [];
+  handle(event: Event): Decision[] {
+    switch (event.type) {
+      case "GPS_UPDATE":
+        this.updateFromGPS(event.payload as any);
+        return [
+          {
+            name: "GPSLocalizationDecision",
+            confidence: 0.9,
+            execute: () => {},
+          },
+        ];
+      case "IMU_UPDATE":
+        this.updateFromIMU(event.payload as any);
+        return [
+          {
+            name: "IMUAttitudeDecision",
+            confidence: 0.7,
+            execute: () => {},
+          },
+        ];
+      default:
+        return [];
+    }
   }
 
   updateFromGPS(data: GPSData): void {
@@ -45,6 +66,13 @@ export class LocalizationAgent extends BaseAgent {
 
   updateFromIMU(data: IMUData): void {
     this.pose.timestamp = data.timestamp;
+
+    // Update attitude from gyroscope as a simple dead-reckoning delta
+    if (data.gyroscope) {
+      this.pose.roll += data.gyroscope.x;
+      this.pose.pitch += data.gyroscope.y;
+      this.pose.yaw += data.gyroscope.z;
+    }
   }
 
   getPose(): Pose {

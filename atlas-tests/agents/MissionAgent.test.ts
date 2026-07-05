@@ -57,6 +57,42 @@ describe("MissionAgent", () => {
     expect(decisions).toEqual([]);
   });
 
+  it("should queue mission on MISSION_QUEUED event", () => {
+    const mission: Mission = {
+      id: "mission-queue",
+      name: "Queued Mission",
+      status: "pending",
+      goals: [],
+    };
+    const event = { type: "MISSION_QUEUED", timestamp: Date.now(), payload: { mission } };
+    agent.handle(event);
+    expect(agent.getMissionQueue()).toHaveLength(1);
+    expect(agent.getMissionQueue()[0].id).toBe("mission-queue");
+  });
+
+  it("should return StartNextMissionDecision when idle and queue has mission", () => {
+    const mission: Mission = {
+      id: "mission-tick",
+      name: "Tick Mission",
+      status: "pending",
+      goals: [],
+    };
+    agent.addMissionToQueue(mission);
+    const event = { type: "TICK", timestamp: Date.now(), payload: {} };
+    const decisions = agent.handle(event);
+    expect(decisions).toHaveLength(1);
+    expect(decisions[0].name).toBe("StartNextMissionDecision");
+    expect(decisions[0].confidence).toBe(1.0);
+  });
+
+  it("should return AbortMissionDecision on MISSION_ABORT", () => {
+    const event = { type: "MISSION_ABORT", timestamp: Date.now(), payload: {} };
+    const decisions = agent.handle(event);
+    expect(decisions).toHaveLength(1);
+    expect(decisions[0].name).toBe("AbortMissionDecision");
+    expect(decisions[0].confidence).toBe(1.0);
+  });
+
   it("should clear mission queue", () => {
     const mission: Mission = {
       id: "mission-4",

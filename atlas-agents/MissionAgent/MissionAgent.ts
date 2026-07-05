@@ -13,8 +13,43 @@ export class MissionAgent extends BaseAgent {
     console.log("Mission Agent initialized");
   }
 
-  handle(_event: Event): Decision[] {
-    return [];
+  handle(event: Event): Decision[] {
+    switch (event.type) {
+      case "MISSION_RECEIVED":
+      case "MISSION_QUEUED": {
+        const mission = event.payload?.mission as Mission | undefined;
+        if (mission) {
+          this.addMissionToQueue(mission);
+        }
+        return [];
+      }
+      case "TICK": {
+        if (!this.getCurrentMission() && this.getMissionQueue().length > 0) {
+          return [
+            {
+              name: "StartNextMissionDecision",
+              confidence: 1.0,
+              execute: () => {
+                void this.startNextMission();
+              },
+            },
+          ];
+        }
+        return [];
+      }
+      case "MISSION_ABORT":
+        return [
+          {
+            name: "AbortMissionDecision",
+            confidence: 1.0,
+            execute: () => {
+              void this.stopCurrentMission();
+            },
+          },
+        ];
+      default:
+        return [];
+    }
   }
 
   addMissionToQueue(mission: Mission): void {

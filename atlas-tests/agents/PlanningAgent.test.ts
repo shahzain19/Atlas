@@ -23,6 +23,30 @@ describe("PlanningAgent", () => {
     expect(decisions).toEqual([]);
   });
 
+  it("should return PlanTasksDecision for REQUEST_PLAN", () => {
+    const event: Event = {
+      type: "REQUEST_PLAN",
+      timestamp: Date.now(),
+      payload: { goal: "Inspect area" },
+    };
+    const decisions = agent.handle(event);
+    expect(decisions).toHaveLength(1);
+    expect(decisions[0].name).toBe("PlanTasksDecision");
+    expect(decisions[0].confidence).toBe(0.9);
+  });
+
+  it("should return PlanRouteDecision for REQUEST_ROUTE", () => {
+    const event: Event = {
+      type: "REQUEST_ROUTE",
+      timestamp: Date.now(),
+      payload: { start: { x: 0, y: 0 }, end: { x: 5, y: 5 } },
+    };
+    const decisions = agent.handle(event);
+    expect(decisions).toHaveLength(1);
+    expect(decisions[0].name).toBe("PlanRouteDecision");
+    expect(decisions[0].confidence).toBe(0.9);
+  });
+
   it("planTasks() should return tasks for a goal", () => {
     const tasks = agent.planTasks("Explore area");
     expect(tasks).toHaveLength(2);
