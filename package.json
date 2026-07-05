@@ -1,0 +1,37 @@
+{
+  "name": "atlas",
+  "version": "1.0.0",
+  "description": "Universal software platform for intelligent machines",
+  "main": "index.js",
+  "bin": {
+    "atlas": "./atlas-cli/dist/index.js"
+  },
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "build:cli": "tsc -p atlas-cli/tsconfig.json",
+    "cli": "ts-node atlas-cli/src/index.ts",
+    "studio:server": "ts-node examples/studio-server.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@types/node": "^26.1.0",
+    "@types/ws": "^8.18.1",
+    "commander": "^15.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3",
+    "uuid": "^14.0.1",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.11"
+  }
+}

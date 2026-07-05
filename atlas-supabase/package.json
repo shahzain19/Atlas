@@ -1,0 +1,27 @@
+{
+  "name": "atlas-supabase",
+  "version": "1.0.0",
+  "description": "Supabase-backed memory system for Atlas",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "migrate": "supabase db push"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.11",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.3"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "setupFiles": ["./tests/setup.ts"],
+    "roots": ["tests"]
+  }
+}

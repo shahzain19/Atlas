@@ -1,0 +1,2 @@
+/usr/bin/ar qc libatlas_navigation.a CMakeFiles/atlas_navigation.dir/src/EnhancedLocalization.cpp.o CMakeFiles/atlas_navigation.dir/src/FeatureExtractor.cpp.o CMakeFiles/atlas_navigation.dir/src/GraphOptimizer.cpp.o CMakeFiles/atlas_navigation.dir/src/SLAMEngine.cpp.o
+/usr/bin/ranlib libatlas_navigation.a
