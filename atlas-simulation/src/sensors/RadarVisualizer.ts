@@ -48,12 +48,9 @@ export class RadarVisualizer extends SensorVisualizer {
       const a = (Math.random() - 0.5) * this.angle * 2;
       const e = (Math.random() - 0.5) * this.angle;
       const dist = t * this.range;
-      const wx = position.x + Math.cos(yaw + a) * Math.cos(e) * dist;
-      const wz = position.z + Math.sin(yaw + a) * Math.cos(e) * dist;
-      const wy = position.y + 0.5 + Math.sin(e) * dist;
-      arr[i * 3] = wx;
-      arr[i * 3 + 1] = wy;
-      arr[i * 3 + 2] = wz;
+      arr[i * 3] = Math.cos(a) * Math.cos(e) * dist;
+      arr[i * 3 + 1] = 0.5 + Math.sin(e) * dist;
+      arr[i * 3 + 2] = Math.sin(a) * Math.cos(e) * dist;
     }
     posAttr.needsUpdate = true;
   }

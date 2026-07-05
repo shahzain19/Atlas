@@ -98,24 +98,7 @@
   background-color: #161b22;
   border: 1px solid #30363d;
   border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.world-grid {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 2px;
-}
-
-.grid-cell {
-  width: 30px;
-  height: 30px;
-  background-color: #21262d;
-  border: 1px solid #30363d;
-  border-radius: 4px;
+  overflow: hidden;
 }
 
 .agents-list {
@@ -255,15 +238,6 @@
   gap: 4px;
 }
 
-.grid-cell.agent-cell {
-  background-color: #238636;
-  border-color: #3fb950;
-}
-
-.grid-cell.object-cell {
-  background-color: #1f6feb;
-  border-color: #58a6ff;
-}
 
 .world-meta {
   color: #8b949e;

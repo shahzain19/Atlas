@@ -1,25 +1,7 @@
 import { useState } from 'react'
 import { useAtlasConnection } from './hooks/useAtlasConnection'
+import WorldView3D from './components/WorldView3D'
 import './App.css'
-
-function worldCellClass(
-  index: number,
-  position: { x: number; y: number },
-  objects: { x: number; y: number }[]
-): string {
-  const col = index % 10
-  const row = Math.floor(index / 10)
-  const agentCol = Math.min(9, Math.max(0, Math.floor((position.x % 10 + 10) % 10)))
-  const agentRow = Math.min(9, Math.max(0, Math.floor((position.y % 10 + 10) % 10)))
-
-  if (col === agentCol && row === agentRow) return 'grid-cell agent-cell'
-  for (const obj of objects) {
-    const objCol = Math.min(9, Math.max(0, Math.floor((obj.x % 10 + 10) % 10)))
-    const objRow = Math.min(9, Math.max(0, Math.floor((obj.y % 10 + 10) % 10)))
-    if (col === objCol && row === objRow) return 'grid-cell object-cell'
-  }
-  return 'grid-cell'
-}
 
 function App() {
   const [activeTab, setActiveTab] = useState('world')
@@ -84,25 +66,7 @@ function App() {
                 {snapshot.world.objects.length} objects
               </p>
               <div className="world-visualizer">
-                <div className="world-grid">
-                  {Array.from({ length: 100 }, (_, i) => (
-                    <div
-                      key={i}
-                      className={worldCellClass(i, snapshot.world.position, snapshot.world.objects)}
-                      title={
-                        worldCellClass(i, snapshot.world.position, snapshot.world.objects).includes('object')
-                          ? snapshot.world.objects.find((o) => {
-                              const col = i % 10
-                              const row = Math.floor(i / 10)
-                              const objCol = Math.min(9, Math.max(0, Math.floor((o.x % 10 + 10) % 10)))
-                              const objRow = Math.min(9, Math.max(0, Math.floor((o.y % 10 + 10) % 10)))
-                              return col === objCol && row === objRow
-                            })?.label
-                          : undefined
-                      }
-                    />
-                  ))}
-                </div>
+                <WorldView3D world={snapshot.world} />
               </div>
             </div>
           )}
