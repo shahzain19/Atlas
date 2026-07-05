@@ -1,12 +1,12 @@
 import { LongTermMemory } from '../../src/memory/long_term_memory';
 import { createTestEvent } from '../helpers';
-import { resetTables } from '../mock_supabase';
+import { cleanupTables } from '../setup';
 
 describe('LongTermMemory', () => {
   let ltm: LongTermMemory;
 
-  beforeEach(() => {
-    resetTables();
+  beforeEach(async () => {
+    await cleanupTables();
     ltm = new LongTermMemory();
   });
 

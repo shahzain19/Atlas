@@ -17,12 +17,16 @@ FetchContent_MakeAvailable(googletest)
 
 include_directories(include)
 
-# Collect all test sources
-file(GLOB_RECURSE TEST_SOURCES tests/*.cpp)
-
 # Build the hardware library (header-only library target)
 add_library(atlas_hardware INTERFACE)
 target_include_directories(atlas_hardware INTERFACE include)
+
+# Hardware daemon executable (JSON IPC bridge for TS/Python)
+add_executable(atlas_hardware_daemon src/hardware_daemon.cpp)
+target_link_libraries(atlas_hardware_daemon PRIVATE atlas_hardware)
+
+# Collect all test sources
+file(GLOB_RECURSE TEST_SOURCES tests/*.cpp)
 
 # Test executable
 add_executable(atlas_hardware_tests ${TEST_SOURCES})

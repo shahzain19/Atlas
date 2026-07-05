@@ -4,6 +4,7 @@ import { HardwareManager } from "../../atlas-runtime/HardwareManager/HardwareMan
 import { Actuator, Sensor } from "../../atlas-kernel/Hardware/Hardware";
 import { NMEAGPSSensor, NMEAGPSSensorAdapter } from "../Drivers/Devices/NMEAGPSSensor";
 import { SerialMotorActuator, SerialMotorController } from "../Drivers/Devices/SerialMotorActuator";
+import { CppBridgeDaemon, CppGPSSensor, CppMotorActuator, CppCameraSensor } from "./CppBridge";
 
 export interface HardwareDeviceBundle {
   driver: BaseDriver;
@@ -70,4 +71,24 @@ export function createDefaultHardwareStack(hardwareManager: HardwareManager): {
   bridge.registerBundle({ driver: motor, actuator: motorActuator });
 
   return { hal, bridge, gps, gpsSensor, motor, motorActuator };
+}
+
+export async function tryInitCppBridge(hardwareManager: HardwareManager): Promise<CppBridgeDaemon | null> {
+  const daemon = new CppBridgeDaemon();
+  try {
+    await daemon.start();
+    const ping = await daemon.sendCommand("ping");
+    if (!ping.ok) throw new Error("Daemon ping failed");
+
+    hardwareManager.registerSensor(new CppGPSSensor(daemon));
+    hardwareManager.registerActuator(new CppMotorActuator(daemon));
+    hardwareManager.registerSensor(new CppCameraSensor(daemon));
+
+    console.log("[CppBridge] C++ hardware daemon connected");
+    return daemon;
+  } catch (err) {
+    console.warn("[CppBridge] C++ hardware daemon unavailable:", (err as Error).message);
+    try { daemon.stop(); } catch { }
+    return null;
+  }
 }

@@ -1,12 +1,12 @@
 import { KnowledgeGraph } from '../../src/knowledge/knowledge_graph';
 import { createTestNode, createTestEdge } from '../helpers';
-import { resetTables } from '../mock_supabase';
+import { cleanupTables } from '../setup';
 
 describe('KnowledgeGraph', () => {
   let kg: KnowledgeGraph;
 
-  beforeEach(() => {
-    resetTables();
+  beforeEach(async () => {
+    await cleanupTables();
     kg = new KnowledgeGraph();
   });
 

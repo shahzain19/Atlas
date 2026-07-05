@@ -1,11 +1,11 @@
 import { SemanticMemory } from '../../src/memory/semantic_memory';
-import { resetTables } from '../mock_supabase';
+import { cleanupTables } from '../setup';
 
 describe('SemanticMemory', () => {
   let sm: SemanticMemory;
 
-  beforeEach(() => {
-    resetTables();
+  beforeEach(async () => {
+    await cleanupTables();
     sm = new SemanticMemory();
   });
 

@@ -1,12 +1,12 @@
 import { ShortTermMemory } from '../../src/memory/short_term_memory';
 import { createTestEvent } from '../helpers';
-import { resetTables } from '../mock_supabase';
+import { cleanupTables } from '../setup';
 
 describe('ShortTermMemory', () => {
   let stm: ShortTermMemory;
 
-  beforeEach(() => {
-    resetTables();
+  beforeEach(async () => {
+    await cleanupTables();
     stm = new ShortTermMemory();
   });
 

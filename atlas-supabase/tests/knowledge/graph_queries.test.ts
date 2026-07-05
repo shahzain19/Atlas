@@ -1,14 +1,14 @@
 import { KnowledgeGraph } from '../../src/knowledge/knowledge_graph';
 import { GraphQueries } from '../../src/knowledge/graph_queries';
 import { createTestNode, createTestEdge } from '../helpers';
-import { resetTables } from '../mock_supabase';
+import { cleanupTables } from '../setup';
 
 describe('GraphQueries', () => {
   let kg: KnowledgeGraph;
   let gq: GraphQueries;
 
-  beforeEach(() => {
-    resetTables();
+  beforeEach(async () => {
+    await cleanupTables();
     kg = new KnowledgeGraph();
     gq = new GraphQueries();
   });

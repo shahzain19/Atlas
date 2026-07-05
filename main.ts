@@ -3,10 +3,7 @@ import { SystemAgent } from "./atlas-agents/SystemAgent/SystemAgent";
 import { TaskAgent } from "./atlas-agents/TaskAgent/TaskAgent";
 import { VisionAgent } from "./atlas-agents/VisionAgent/VisionAgent";
 import { NavigationAgent } from "./atlas-agents/NavigationAgent/NavigationAgent";
-import { MockMotor } from "./atlas-hardware/Drivers/Mock/MockMotor";
-import { MockCamera } from "./atlas-hardware/Drivers/Mock/MockCamera";
-import { NMEAGPSSensor } from "./atlas-hardware/Drivers/Devices/NMEAGPSSensor";
-import { SerialMotorController } from "./atlas-hardware/Drivers/Devices/SerialMotorActuator";
+import { tryInitCppBridge } from "./atlas-hardware/Bridge/HardwareBridge";
 
 const atlas = new AtlasRuntime();
 
@@ -16,23 +13,13 @@ atlas.agents.register(new TaskAgent(atlas));
 atlas.agents.register(new VisionAgent(atlas));
 atlas.agents.register(new NavigationAgent(atlas));
 
-// Register simulation hardware
-atlas.hardware.registerActuator(new MockMotor());
-atlas.hardware.registerActuator(new MockCamera());
-
-// Initialize real HAL-backed drivers (NMEA GPS + serial motor)
-void atlas.hardwareBridge.initializeAll().then(async () => {
-  const gpsDriver = atlas.halLayer.getDriver<NMEAGPSSensor>("gps-001");
-  if (gpsDriver) {
-    gpsDriver.ingestNMEA(
-      "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47"
-    );
-    await gpsDriver.connect("memory://gps", 9600).catch(() => undefined);
-  }
-
-  const motorDriver = atlas.halLayer.getDriver<SerialMotorController>("motor-001");
-  if (motorDriver) {
-    await motorDriver.connect("memory://motor", 115200).catch(() => undefined);
+// Register C++-backed hardware drivers via hardware daemon
+void tryInitCppBridge(atlas.hardware).then((daemon) => {
+  if (daemon) {
+    (globalThis as any).__cppDaemon = daemon;
+    console.log("[main] C++ hardware bridge active");
+  } else {
+    console.log("[main] C++ hardware bridge unavailable, using TS fallback drivers");
   }
 });
 

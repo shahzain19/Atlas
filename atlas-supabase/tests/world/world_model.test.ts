@@ -1,12 +1,12 @@
 import { WorldModel } from '../../src/world/world_model';
 import { createTestWorldObject } from '../helpers';
-import { resetTables } from '../mock_supabase';
+import { cleanupTables } from '../setup';
 
 describe('WorldModel', () => {
   let world: WorldModel;
 
-  beforeEach(() => {
-    resetTables();
+  beforeEach(async () => {
+    await cleanupTables();
     world = new WorldModel();
   });
 

@@ -1,12 +1,12 @@
 import { EventStore } from '../../src/events/event_store';
 import { createTestEvent } from '../helpers';
-import { resetTables } from '../mock_supabase';
+import { cleanupTables } from '../setup';
 
 describe('EventStore', () => {
   let store: EventStore;
 
-  beforeEach(() => {
-    resetTables();
+  beforeEach(async () => {
+    await cleanupTables();
     store = new EventStore();
   });
 

@@ -7,8 +7,7 @@ import { SystemAgent } from "../../atlas-agents/SystemAgent/SystemAgent";
 import { TaskAgent } from "../../atlas-agents/TaskAgent/TaskAgent";
 import { VisionAgent } from "../../atlas-agents/VisionAgent/VisionAgent";
 import { NavigationAgent } from "../../atlas-agents/NavigationAgent/NavigationAgent";
-import { MockMotor } from "../../atlas-hardware/Drivers/Mock/MockMotor";
-import { MockCamera } from "../../atlas-hardware/Drivers/Mock/MockCamera";
+
 
 export interface StudioServerOptions {
   port?: number;
@@ -38,8 +37,6 @@ export class StudioServer {
     atlas.agents.register(new TaskAgent(atlas));
     atlas.agents.register(new VisionAgent(atlas));
     atlas.agents.register(new NavigationAgent(atlas));
-    atlas.hardware.registerActuator(new MockMotor());
-    atlas.hardware.registerActuator(new MockCamera());
     return atlas;
   }
 

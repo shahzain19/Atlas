@@ -1,7 +1,7 @@
 import { SpatialIndex } from '../../src/world/spatial_index';
 import { WorldModel } from '../../src/world/world_model';
 import { createTestWorldObject } from '../helpers';
-import { resetTables } from '../mock_supabase';
+import { cleanupTables } from '../setup';
 
 describe('SpatialIndex', () => {
   let index: SpatialIndex;
@@ -10,7 +10,7 @@ describe('SpatialIndex', () => {
   const ORIGIN = { x: 0, y: 0, z: 0 };
 
   beforeEach(async () => {
-    resetTables();
+    await cleanupTables();
     index = new SpatialIndex();
     world = new WorldModel();
     await world.addObject(createTestWorldObject({ object_type: 'rock', position_x: 5, position_y: 0 }));
