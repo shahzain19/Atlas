@@ -47,7 +47,8 @@ export type StudioClientMessage =
   | { type: "get_snapshot" }
   | { type: "start_runtime" }
   | { type: "stop_runtime" }
-  | { type: "submit_mission"; payload: { name: string } };
+  | { type: "submit_mission"; payload: { name: string } }
+  | { type: "emit_event"; payload: { type: string; source?: string; payload?: Record<string, unknown>; timestamp: number } };
 
 export type StudioServerMessage =
   | { type: "pong"; timestamp: number }

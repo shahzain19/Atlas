@@ -10,11 +10,14 @@
     "doc": "docs"
   },
   "scripts": {
+    "start": "ts-node main.ts",
+    "sim": "cd atlas-simulation && npx vite",
+    "studio": "cd atlas-studio && npx vite",
+    "demo": "npx concurrently -n run,sim,ui -c yellow,cyan,green \"npm start\" \"npm run sim\" \"npm run studio\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "build:cli": "tsc -p atlas-cli/tsconfig.json",
-    "cli": "ts-node atlas-cli/src/index.ts",
-    "studio:server": "ts-node examples/studio-server.ts"
+    "cli": "ts-node atlas-cli/src/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -31,6 +34,7 @@
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
+    "concurrently": "^10.0.3",
     "jest": "^30.4.2",
     "ts-jest": "^29.4.11"
   }

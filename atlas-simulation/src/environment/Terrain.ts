@@ -20,10 +20,10 @@ export class Terrain {
         + Math.cos(z * 0.9 - x * 0.4) * 0.15;
       posAttr.setY(i, y);
 
-      const h = (y + 1) / 2;
-      const r = 0.2 + h * 0.5;
-      const g = 0.3 + h * 0.5;
-      const b = 0.1 + h * 0.2;
+      const h = THREE.MathUtils.clamp((y + 1) / 2, 0, 1);
+      const r = 0.3 + h * 0.6;
+      const g = 0.4 + h * 0.5;
+      const b = 0.15 + h * 0.25;
       colors[i * 3] = r;
       colors[i * 3 + 1] = g;
       colors[i * 3 + 2] = b;
@@ -32,11 +32,8 @@ export class Terrain {
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geo.computeVertexNormals();
 
-    const mat = new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshLambertMaterial({
       vertexColors: true,
-      roughness: 0.8,
-      metalness: 0.0,
-      flatShading: false,
     });
 
     this.mesh = new THREE.Mesh(geo, mat);

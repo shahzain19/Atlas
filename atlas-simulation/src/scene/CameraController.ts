@@ -5,14 +5,14 @@ import { Robot } from '../entities/Robot';
 export type CamMode = 'orbit' | 'follow' | 'topdown' | 'firstperson';
 
 export class CameraController {
-  public mode: CamMode = 'orbit';
+  public mode: CamMode = 'follow';
   public orbitControls: OrbitControls;
 
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private target: THREE.Vector3 = new THREE.Vector3();
   private smoothTarget: THREE.Vector3 = new THREE.Vector3();
-  private followOffset: THREE.Vector3 = new THREE.Vector3(0, 5, -8);
+  private followOffset: THREE.Vector3 = new THREE.Vector3(0, 5, 8);
 
   constructor(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer) {
     this.camera = camera;

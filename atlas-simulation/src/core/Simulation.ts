@@ -17,6 +17,8 @@ import { MiniMap } from '../hud/MiniMap';
 import { TelemetryPanel } from '../hud/TelemetryPanel';
 import { PhysicsEngine } from '../physics/PhysicsEngine';
 import { CollisionDetector } from '../physics/CollisionDetector';
+import { RuntimeBridge } from '../RuntimeBridge';
+import { Controls } from '../hud/Controls';
 
 export class Simulation {
   public config: SimulationConfig;
@@ -38,6 +40,8 @@ export class Simulation {
   public hud: HUD;
   public miniMap: MiniMap;
   public telemetry: TelemetryPanel;
+  public runtimeBridge: RuntimeBridge;
+  public controls: Controls;
 
   private lastTime: number = 0;
 
@@ -82,9 +86,45 @@ export class Simulation {
     this.hud = new HUD();
     this.miniMap = new MiniMap();
     this.telemetry = new TelemetryPanel();
+    this.runtimeBridge = new RuntimeBridge();
+    this.controls = new Controls(this.robotController);
+    (window as any).__sim = this;
+
+    const statusEl = document.createElement('div');
+    statusEl.id = 'runtime-status';
+    statusEl.style.cssText = 'position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:20;font-family:monospace;font-size:12px;padding:4px 12px;border-radius:4px;pointer-events:none;background:rgba(0,0,0,0.6);transition:color 0.3s;';
+    statusEl.textContent = '◌ Runtime: connecting...';
+    statusEl.style.color = '#ff0';
+    document.body.appendChild(statusEl);
+
+    this.runtimeBridge.onStatusChange = (status) => {
+      if (status === 'connected') {
+        statusEl.textContent = '● Runtime: connected';
+        statusEl.style.color = '#0f0';
+      } else if (status === 'connecting') {
+        statusEl.textContent = '◌ Runtime: connecting...';
+        statusEl.style.color = '#ff0';
+      } else {
+        statusEl.textContent = '○ Runtime: disconnected (start npm start)';
+        statusEl.style.color = '#f44';
+      }
+    };
+
+    const notifEl = document.createElement('div');
+    notifEl.id = 'event-notif';
+    notifEl.style.cssText = 'position:absolute;bottom:180px;left:50%;transform:translateX(-50%);z-index:20;font-family:monospace;font-size:11px;padding:4px 10px;border-radius:4px;pointer-events:none;background:rgba(0,0,0,0.5);color:#0f0;opacity:0;transition:opacity 0.3s;';
+    document.body.appendChild(notifEl);
+
+    this.runtimeBridge.onEvent = (type) => {
+      notifEl.textContent = `→ ${type}`;
+      notifEl.style.opacity = '1';
+      clearTimeout((notifEl as any)._timer);
+      (notifEl as any)._timer = setTimeout(() => { notifEl.style.opacity = '0'; }, 1500);
+    };
 
     this.events.on('waypoint-reached', (idx: number) => {
       console.log(`Waypoint ${idx + 1} reached!`);
+      this.runtimeBridge.emitWaypointReached(idx);
     });
     this.events.on('all-waypoints-reached', () => {
       console.log('All waypoints completed!');
@@ -95,6 +135,7 @@ export class Simulation {
 
   start(): void {
     this.lastTime = performance.now();
+    this.runtimeBridge.start();
     requestAnimationFrame(this.loop.bind(this));
   }
 
@@ -145,6 +186,13 @@ export class Simulation {
 
     this.waypoints.checkProgress(roboPos);
 
+    this.runtimeBridge.sendSimState(
+      this.robot,
+      this.obstacles.obstacles,
+      this.waypoints.waypoints,
+      performance.now()
+    );
+
     this.cameraController.followRobot(this.robot);
 
     this.hud.updateStatus(
@@ -175,6 +223,9 @@ export class Simulation {
   }
 
   dispose(): void {
+    (window as any).__sim = undefined;
+    this.controls.dispose();
+    this.runtimeBridge.stop();
     this.robotController.dispose();
     this.robot.dispose();
     this.lidar.dispose();

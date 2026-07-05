@@ -122,8 +122,4 @@ setTimeout(async () => {
   console.log(`[SLAM] Map Objects:`, map.objects.map(obj => `${obj.label} at x=${obj.position.x.toFixed(2)}`));
 }, 4500);
 
-// Exit after 6 seconds for demo purposes
-setTimeout(() => {
-  console.log("Stopping Atlas...");
-  process.exit(0);
-}, 6000);
+// Keep running (the demo can be interrupted with Ctrl+C)

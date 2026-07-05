@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  atlas:
+  runtime:
     build:
       context: .
       target: runtime
@@ -13,6 +13,42 @@ services:
       - NODE_ENV=production
     command: ["npx", "ts-node", "main.ts"]
 
+  simulation:
+    build:
+      context: .
+      target: deps
+    ports:
+      - "5174:5174"
+    volumes:
+      - .:/app
+    working_dir: /app/atlas-simulation
+    environment:
+      ATLAS_API_URL: http://runtime:8080
+    command:
+      - sh
+      - -c
+      - "npm install 2>/dev/null; npx vite --host 0.0.0.0 --port 5174"
+    depends_on:
+      - runtime
+
+  studio:
+    build:
+      context: .
+      target: deps
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    working_dir: /app/atlas-studio
+    environment:
+      ATLAS_API_URL: http://runtime:8080
+    command:
+      - sh
+      - -c
+      - "npm install 2>/dev/null; npx vite --host 0.0.0.0 --port 3000"
+    depends_on:
+      - runtime
+
   test:
     profiles:
       - test
@@ -22,22 +58,6 @@ services:
     volumes:
       - .:/app
     command: ["npm", "test"]
-
-  studio:
-    profiles:
-      - dev
-    build:
-      context: .
-      target: deps
-    ports:
-      - "5173:5173"
-    volumes:
-      - .:/app
-    working_dir: /app/atlas-studio
-    command:
-      - sh
-      - -c
-      - "npm ci && npx vite --host 0.0.0.0"
 
 volumes:
   atlas-storage:

@@ -11,6 +11,8 @@ export class Environment {
   }
 
   private createSky(scene: THREE.Scene): void {
+    scene.background = new THREE.Color(0x87ceeb);
+
     const canvas = document.createElement('canvas');
     canvas.width = 1;
     canvas.height = 512;
@@ -24,6 +26,7 @@ export class Environment {
     ctx.fillRect(0, 0, 1, 512);
 
     const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
     scene.background = tex;
   }
 

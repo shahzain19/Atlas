@@ -69,6 +69,9 @@ export class StudioBridge {
       case "submit_mission":
         void this.submitMission(message.payload.name);
         return { type: "event", payload: { type: "MISSION_QUEUED", message: `Mission queued: ${message.payload.name}`, timestamp: Date.now() } };
+      case "emit_event":
+        void this.runtime.emit(message.payload);
+        return null;
       default:
         return { type: "error", payload: { message: `Unknown message type` } };
     }

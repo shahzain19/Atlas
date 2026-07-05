@@ -182,12 +182,23 @@ export class AtlasRuntime {
     this.missionManager.startMission(mission.id);
 
     // 🧠 Execute tasks sequentially
+    let missionFailed = false;
     for (const task of tasks) {
       this.registerTask(task);
-      await this.runTask(task.id);
+      try {
+        await this.runTask(task.id);
+      } catch {
+        console.error(`[AtlasRuntime] Task ${task.name} failed, aborting mission`);
+        missionFailed = true;
+        break;
+      }
     }
 
-    this.missionManager.completeMission(mission.id);
+    if (missionFailed) {
+      this.missionManager.failMission(mission.id);
+    } else {
+      this.missionManager.completeMission(mission.id);
+    }
     
     await this.emit({
       type: "MISSION_COMPLETED",
