@@ -785,21 +785,33 @@ export class EnhancedLocalization {
    * Compute relative pose between two poses
    */
   private computeRelativePose(pose1: Pose, pose2: Pose): Pose {
-    // Compute pose2 in pose1's frame
-    // Simplified - assumes small angles
+    const p1o = pose1.orientation;
+    const p2o = pose2.orientation;
+
+    // Inverse of q1 (conjugate for unit quaternion)
+    const q1x = -p1o.x, q1y = -p1o.y, q1z = -p1o.z, q1w = p1o.w;
+
+    // Relative orientation: q_rel = conj(q1) * q2
+    const rx = q1w * p2o.x + q1x * p2o.w + q1y * p2o.z - q1z * p2o.y;
+    const ry = q1w * p2o.y - q1x * p2o.z + q1y * p2o.w + q1z * p2o.x;
+    const rz = q1w * p2o.z + q1x * p2o.y - q1y * p2o.x + q1z * p2o.w;
+    const rw = q1w * p2o.w - q1x * p2o.x - q1y * p2o.y - q1z * p2o.z;
+    const len = Math.sqrt(rx * rx + ry * ry + rz * rz + rw * rw);
+
+    // Rotate position difference by inverse of q1
+    const dx = pose2.position.x - pose1.position.x;
+    const dy = pose2.position.y - pose1.position.y;
+    const dz = pose2.position.z - pose1.position.z;
+    const t1x = q1y * dz - q1z * dy + q1w * dx;
+    const t1y = q1z * dx - q1x * dz + q1w * dy;
+    const t1z = q1x * dy - q1y * dx + q1w * dz;
+    const px = dx + 2 * (q1y * t1z - q1z * t1y);
+    const py = dy + 2 * (q1z * t1x - q1x * t1z);
+    const pz = dz + 2 * (q1x * t1y - q1y * t1x);
 
     return {
-      position: {
-        x: pose2.position.x - pose1.position.x,
-        y: pose2.position.y - pose1.position.y,
-        z: pose2.position.z - pose1.position.z,
-      },
-      orientation: {
-        x: pose2.orientation.x - pose1.orientation.x,
-        y: pose2.orientation.y - pose1.orientation.y,
-        z: pose2.orientation.z - pose1.orientation.z,
-        w: pose2.orientation.w,
-      },
+      position: { x: px, y: py, z: pz },
+      orientation: { x: rx / len, y: ry / len, z: rz / len, w: rw / len },
       timestamp: pose2.timestamp,
     };
   }

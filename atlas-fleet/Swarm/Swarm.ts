@@ -78,9 +78,9 @@ export class Swarm {
     telemetry?: FleetTelemetry,
     eventBus?: EventBus
   ) {
-    this.agentRegistry = agentRegistry || new AgentRegistry();
-    this.telemetry = telemetry || new FleetTelemetry();
     this.eventBus = eventBus || new EventBus();
+    this.agentRegistry = agentRegistry || new AgentRegistry();
+    this.telemetry = telemetry || new FleetTelemetry(this.eventBus);
   }
 
   /**

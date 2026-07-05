@@ -78,7 +78,7 @@ export class SocketCANTransport implements CANTransport {
     const hex = Array.from(frame.data)
       .map((b) => b.toString(16).padStart(2, "0"))
       .join(".");
-    const id = frame.extended ? `${frame.id.toString(16)}` : `${frame.id.toString(16)}`;
+    const id = frame.extended ? frame.id.toString(16).padStart(8, "0") : frame.id.toString(16);
     try {
       await exec("cansend", [`${this.bus}`, `${id}#${hex}`]);
     } catch {

@@ -345,7 +345,7 @@ export class PredictiveModel {
     const gradient = this.learningRate * error;
 
     for (let i = 0; i < Math.min(window.length, this.model.length); i++) {
-      this.model[i] += gradient * window[i] * 0.01;
+      this.model[i] += gradient * window[i];
     }
   }
 

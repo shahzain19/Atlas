@@ -45,10 +45,11 @@ export class LanguageModel {
     const words = text.toLowerCase().split(/\W+/).filter((w) => w.length > 3);
     const topics = [...new Set(words)].slice(0, 5);
     const keywords = topics.slice(0, 3);
+    const lower = text.toLowerCase();
     const sentiment: "positive" | "negative" | "neutral" =
-      text.includes("good") || text.includes("great") || text.includes("excellent")
+      lower.includes("good") || lower.includes("great") || lower.includes("excellent")
         ? "positive"
-        : text.includes("bad") || text.includes("terrible") || text.includes("awful")
+        : lower.includes("bad") || lower.includes("terrible") || lower.includes("awful")
         ? "negative"
         : "neutral";
     const entities = text

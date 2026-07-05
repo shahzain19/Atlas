@@ -73,8 +73,10 @@ export class DeepReasoningEngine {
 
     // Retrieve relevant context from semantic memory
     let relevantEvents: Event[] = [];
-    if (this.semanticMemory && context) {
-      await this.semanticMemory.add(context[0]);
+    if (this.semanticMemory && context && context.length > 0) {
+      for (const event of context) {
+        await this.semanticMemory.add(event);
+      }
       relevantEvents = await this.semanticMemory.search(query, 5);
       reasoning.push(`Retrieved ${relevantEvents.length} relevant memories`);
     }

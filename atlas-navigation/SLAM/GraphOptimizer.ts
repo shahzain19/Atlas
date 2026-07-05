@@ -382,18 +382,21 @@ export class GraphOptimizer {
     while (queue.length > 0) {
       const current = queue.shift()!;
 
-      // Find edges from current vertex
+      // Find edges from current vertex (both directions)
       for (const edge of this.edges) {
-        const targetId =
-          edge.sourceId === current.id ? edge.targetId : undefined;
+        if (edge.sourceId !== current.id && edge.targetId !== current.id) continue;
+        if (visited.has(edge.sourceId === current.id ? edge.targetId : edge.sourceId)) continue;
 
-        if (!targetId || visited.has(targetId)) continue;
+        const targetId = edge.sourceId === current.id ? edge.targetId : edge.sourceId;
+        const relativePose = edge.sourceId === current.id
+          ? edge.relativePose
+          : this.invertPose(edge.relativePose);
 
         const target = this.graph.get(targetId);
         if (!target || target.fixed) continue;
 
         // Compute pose from current vertex using relative transformation
-        const newPose = this.composePose(current.pose, edge.relativePose);
+        const newPose = this.composePose(current.pose, relativePose);
         target.pose = newPose;
         visited.add(targetId);
         queue.push(target);
@@ -448,6 +451,24 @@ export class GraphOptimizer {
         w: nw / len,
       },
       timestamp: relative.timestamp,
+    };
+  }
+
+  private invertPose(pose: Pose): Pose {
+    const qi = { x: -pose.orientation.x, y: -pose.orientation.y, z: -pose.orientation.z, w: pose.orientation.w };
+    // Rotate negated position by inverse quaternion
+    const px = -pose.position.x, py = -pose.position.y, pz = -pose.position.z;
+    const t1x = qi.y * pz - qi.z * py + qi.w * px;
+    const t1y = qi.z * px - qi.x * pz + qi.w * py;
+    const t1z = qi.x * py - qi.y * px + qi.w * pz;
+    return {
+      position: {
+        x: px + 2 * (qi.y * t1z - qi.z * t1y),
+        y: py + 2 * (qi.z * t1x - qi.x * t1z),
+        z: pz + 2 * (qi.x * t1y - qi.y * t1x),
+      },
+      orientation: qi,
+      timestamp: pose.timestamp,
     };
   }
 
@@ -949,45 +970,37 @@ export class PoseGraphManager {
    * Add a keyframe to the graph
    */
   addKeyframe(keyframe: Keyframe): void {
-    // Add vertex
     this.optimizer.addVertex(keyframe.id, keyframe.pose, false);
-
-    // Store keyframe
     this.keyframes.set(keyframe.id, keyframe);
 
-    // Add edges from previous keyframes
-    if (keyframe.connections.length > 0) {
-      for (const connection of keyframe.connections) {
-        this.optimizer.addEdge(
-          keyframe.id,
-          connection.keyframeId,
-          connection.relativePose,
-          connection.informationMatrix,
-          connection.edgeType
-        );
-      }
+    // Add edges from connections
+    for (const connection of keyframe.connections) {
+      this.optimizer.addEdge(
+        keyframe.id,
+        connection.keyframeId,
+        connection.relativePose,
+        connection.informationMatrix,
+        connection.edgeType
+      );
     }
 
-    // Add edge from this keyframe to previous keyframe if exists
-    const previousKeyframeIds = Array.from(this.keyframes.keys());
-    if (previousKeyframeIds.length > 1) {
-      const prevId = previousKeyframeIds[previousKeyframeIds.length - 2];
-      const prevKeyframe = this.keyframes.get(prevId);
-      
-      if (prevKeyframe) {
-        // Compute relative pose from previous to current
+    // Add odometry edge to previous keyframe if not already in connections
+    const keys = Array.from(this.keyframes.keys());
+    if (keys.length > 1) {
+      const prevId = keys[keys.length - 2];
+      const alreadyConnected = keyframe.connections.some(c => c.keyframeId === prevId);
+      if (!alreadyConnected) {
+        const prevKf = this.keyframes.get(prevId)!;
         const relativePose: Pose = {
           position: {
-            x: keyframe.pose.position.x - prevKeyframe.pose.position.x,
-            y: keyframe.pose.position.y - prevKeyframe.pose.position.y,
-            z: keyframe.pose.position.z - prevKeyframe.pose.position.z,
+            x: keyframe.pose.position.x - prevKf.pose.position.x,
+            y: keyframe.pose.position.y - prevKf.pose.position.y,
+            z: keyframe.pose.position.z - prevKf.pose.position.z,
           },
-          orientation: prevKeyframe.pose.orientation,
+          orientation: { x: 0, y: 0, z: 0, w: 1 },
           timestamp: keyframe.timestamp,
         };
-        
-        const info = this.createDefaultInfoMatrix("ODOMETRY");
-        this.optimizer.addEdge(prevId, keyframe.id, relativePose, info, "ODOMETRY");
+        this.optimizer.addEdge(prevId, keyframe.id, relativePose, undefined, "ODOMETRY");
       }
     }
   }

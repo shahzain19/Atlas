@@ -36,7 +36,7 @@ export class LocalizationAgent extends BaseAgent {
   }
 
   updateFromGPS(data: GPSData): void {
-    if (data.latitude && data.longitude) {
+    if (data.latitude != null && data.longitude != null) {
       this.pose.x = data.longitude * 100000;
       this.pose.y = data.latitude * 100000;
       this.pose.timestamp = data.timestamp;

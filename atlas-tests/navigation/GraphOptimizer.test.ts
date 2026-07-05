@@ -408,9 +408,9 @@ describe("PoseGraphManager", () => {
     manager.addKeyframe(kf1);
     manager.addKeyframe(kf2);
 
-    // Auto edge from kf1 to kf2 + explicit connection edge
+    // Only the explicit connection edge (auto-edge skipped since connection already exists)
     const stats = manager.getGraphStats();
-    expect(stats.edgeCount).toBe(2);
+    expect(stats.edgeCount).toBe(1);
   });
 });
 
