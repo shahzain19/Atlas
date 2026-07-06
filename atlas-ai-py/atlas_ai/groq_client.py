@@ -1,10 +1,13 @@
 import json
 import os
+import time
+import hashlib
 from groq import AsyncGroq
-
 
 API_KEY = "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"
 DEFAULT_MODEL = "llama-3.3-70b-versatile"
+CACHE_MAX = 256
+CACHE_TTL_S = 300
 
 
 class GroqClient:
@@ -13,6 +16,8 @@ class GroqClient:
     def __init__(self, api_key: str = None, model: str = None):
         self.client = AsyncGroq(api_key=api_key or API_KEY)
         self.model = model or DEFAULT_MODEL
+        self._cache = {}
+        self._cache_keys = []
 
     @classmethod
     def get_instance(cls) -> "GroqClient":
@@ -20,9 +25,45 @@ class GroqClient:
             cls._instance = cls()
         return cls._instance
 
+    def _cache_key(self, prompt: str, system: str = None, temperature: float = None) -> str:
+        raw = f"{self.model}|{prompt}|{system or ''}|{temperature or ''}"
+        return hashlib.sha256(raw.encode()).hexdigest()
+
+    def _cache_get(self, key: str) -> str | None:
+        entry = self._cache.get(key)
+        if entry is None:
+            return None
+        if time.time() > entry["expires_at"]:
+            del self._cache[key]
+            return None
+        return entry["result"]
+
+    def _cache_set(self, key: str, result: str):
+        if len(self._cache) >= CACHE_MAX:
+            oldest = self._cache_keys.pop(0) if self._cache_keys else None
+            if oldest and oldest in self._cache:
+                del self._cache[oldest]
+        self._cache[key] = {"result": result, "expires_at": time.time() + CACHE_TTL_S}
+        self._cache_keys.append(key)
+
+    def set_model(self, model: str):
+        self.model = model
+        self._cache.clear()
+        self._cache_keys.clear()
+
+    def clear_cache(self):
+        self._cache.clear()
+        self._cache_keys.clear()
+
     async def generate(self, prompt: str, system: str = None,
                        max_tokens: int = 512, temperature: float = 0.7,
-                       top_p: float = 0.9) -> str:
+                       top_p: float = 0.9, no_cache: bool = False) -> str:
+        if not no_cache:
+            key = self._cache_key(prompt, system, temperature)
+            cached = self._cache_get(key)
+            if cached is not None:
+                return cached
+
         try:
             messages = []
             if system:
@@ -36,7 +77,12 @@ class GroqClient:
                 temperature=temperature,
                 top_p=top_p,
             )
-            return completion.choices[0].message.content or ""
+            result = completion.choices[0].message.content or ""
+
+            if not no_cache and result:
+                key = self._cache_key(prompt, system, temperature)
+                self._cache_set(key, result)
+            return result
         except Exception as e:
             print(f"[Groq] API error: {e}")
             return ""

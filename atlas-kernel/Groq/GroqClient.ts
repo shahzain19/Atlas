@@ -2,12 +2,21 @@ import Groq from "groq-sdk";
 
 const API_KEY = "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";
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";
+const CACHE_MAX = 256;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+interface CacheEntry {
+  result: string;
+  expiresAt: number;
+}
 
 let _instance: GroqClient | null = null;
 
 export class GroqClient {
   private client: Groq;
   private model: string;
+  private cache = new Map<string, CacheEntry>();
+  private cacheKeys: string[] = [];
 
   constructor(apiKey?: string, model?: string) {
     this.client = new Groq({ apiKey: apiKey || API_KEY });
@@ -19,12 +28,53 @@ export class GroqClient {
     return _instance;
   }
 
+  private cacheKey(prompt: string, options?: Record<string, unknown>): string {
+    return `${this.model}|${prompt}|${JSON.stringify(options || {})}`;
+  }
+
+  private cacheGet(key: string): string | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return null;
+    }
+    return entry.result;
+  }
+
+  private cacheSet(key: string, result: string): void {
+    if (this.cache.size >= CACHE_MAX) {
+      const oldest = this.cacheKeys.shift();
+      if (oldest) this.cache.delete(oldest);
+    }
+    this.cache.set(key, { result, expiresAt: Date.now() + CACHE_TTL_MS });
+    this.cacheKeys.push(key);
+  }
+
+  setModel(model: string): void {
+    this.model = model;
+    this.cache.clear();
+    this.cacheKeys = [];
+  }
+
+  clearCache(): void {
+    this.cache.clear();
+    this.cacheKeys = [];
+  }
+
   async generate(prompt: string, options?: {
     maxTokens?: number;
     temperature?: number;
     topP?: number;
     system?: string;
+    noCache?: boolean;
   }): Promise<string> {
+    if (!options?.noCache) {
+      const key = this.cacheKey(prompt, options ? { system: options.system, temperature: options.temperature } : undefined);
+      const cached = this.cacheGet(key);
+      if (cached != null) return cached;
+    }
+
     try {
       const completion = await this.client.chat.completions.create({
         model: this.model,
@@ -36,7 +86,13 @@ export class GroqClient {
         temperature: options?.temperature ?? 0.7,
         top_p: options?.topP ?? 0.9,
       });
-      return completion.choices[0]?.message?.content || "";
+      const result = completion.choices[0]?.message?.content || "";
+
+      if (!options?.noCache && result) {
+        const key = this.cacheKey(prompt, options ? { system: options.system, temperature: options.temperature } : undefined);
+        this.cacheSet(key, result);
+      }
+      return result;
     } catch (err) {
       console.error("[Groq] API error:", err);
       return "";
