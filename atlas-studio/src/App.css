@@ -282,3 +282,393 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ── Dashboard ───────────────────────────── */
+
+.dashboard-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dashboard-stat p {
+  font-size: 28px;
+}
+
+.dashboard-telemetry h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: #e6edf3;
+}
+
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: 1fr 180px 1fr;
+  gap: 16px;
+}
+
+.telemetry-card {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.telemetry-card h4 {
+  font-size: 13px;
+  color: #8b949e;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.telemetry-card-wide {
+  grid-column: auto;
+}
+
+.telemetry-bar {
+  display: flex;
+  height: 24px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #21262d;
+}
+
+.telemetry-bar-segment {
+  transition: width 0.6s ease;
+}
+
+.telemetry-bar-segment.short-term { background-color: #58a6ff; }
+.telemetry-bar-segment.long-term { background-color: #3fb950; }
+.telemetry-bar-segment.knowledge-graph { background-color: #d29922; }
+
+.telemetry-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.legend-dot.short-term { background-color: #58a6ff; }
+.legend-dot.long-term { background-color: #3fb950; }
+.legend-dot.knowledge-graph { background-color: #d29922; }
+
+.donut-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.donut-chart {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.donut-center {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: #161b22;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #e6edf3;
+}
+
+.activity-chart {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  height: 100px;
+}
+
+.activity-bar {
+  width: 22px;
+  background: linear-gradient(to top, #238636, #3fb950);
+  border-radius: 4px 4px 0 0;
+  animation: activity-pulse 2s ease-in-out infinite;
+}
+
+@keyframes activity-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* ── Agent Card (expandable) ─────────────── */
+
+.agent-card {
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.agent-card:hover {
+  border-color: #58a6ff;
+}
+
+.agent-subtitle {
+  font-size: 13px;
+  color: #8b949e;
+}
+
+.agent-details {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #30363d;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.agent-detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.agent-detail-label {
+  color: #8b949e;
+}
+
+.agent-detail-value {
+  color: #e6edf3;
+  font-weight: 500;
+}
+
+.agent-health-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.agent-health-bar {
+  flex: 1;
+  height: 8px;
+  background: #21262d;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.agent-health-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.agent-health-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8b949e;
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ── Task Item (with actions + progress) ─── */
+
+.task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 12px 16px;
+  gap: 12px;
+}
+
+.task-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.task-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-priority-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.task-progress-bar {
+  height: 4px;
+  background: #21262d;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.task-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.task-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.task-action-btn {
+  padding: 5px 12px;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: #e6edf3;
+  transition: all 0.15s;
+}
+
+.task-action-btn:hover:not(:disabled) {
+  border-color: #8b949e;
+}
+
+.task-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  border-color: #f85149;
+  color: #f85149;
+}
+
+.retry-btn:hover:not(:disabled) {
+  border-color: #3fb950;
+  color: #3fb950;
+}
+
+/* ── Mission Form ──────────────────────────── */
+
+.mission-form {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.mission-form h3 {
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+.mission-form-row {
+  display: flex;
+  gap: 8px;
+}
+
+.mission-input {
+  flex: 1;
+  padding: 8px 12px;
+  background-color: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #e6edf3;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.mission-input:focus {
+  border-color: #58a6ff;
+}
+
+.mission-input::placeholder {
+  color: #484f58;
+}
+
+.mission-submit-btn {
+  padding: 8px 20px;
+  background-color: #238636;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.mission-submit-btn:hover:not(:disabled) {
+  background-color: #2ea043;
+}
+
+.mission-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mission-feedback {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #3fb950;
+  font-weight: 500;
+  animation: feedback-fade 0.3s ease;
+}
+
+@keyframes feedback-fade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Memory Graph ──────────────────────────── */
+
+.memory-graph-container {
+  margin-top: 20px;
+  position: relative;
+}
+
+.memory-canvas {
+  width: 100%;
+  height: 450px;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  cursor: pointer;
+  display: block;
+  background: #161b22;
+}
+
+.graph-node-tooltip {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: #e6edf3;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}

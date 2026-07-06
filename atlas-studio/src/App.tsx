@@ -1,22 +1,49 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useAtlasConnection } from './hooks/useAtlasConnection'
 import WorldView3D from './components/WorldView3D'
+import Dashboard from './components/Dashboard'
+import AgentCard from './components/AgentCard'
+import TaskItem from './components/TaskItem'
+import MissionForm from './components/MissionForm'
+import MemoryGraph from './components/MemoryGraph'
 import './App.css'
 
+const TABS = ['dashboard', 'world', 'agents', 'planning', 'memory'] as const
+type Tab = (typeof TABS)[number]
+
 function App() {
-  const [activeTab, setActiveTab] = useState('world')
-  const { connectionState, snapshot, startRuntime, stopRuntime } = useAtlasConnection()
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard')
+  const { connectionState, snapshot, startRuntime, stopRuntime, refresh } =
+    useAtlasConnection()
 
   const agentStatus = snapshot.status
   const isConnected = connectionState === 'connected'
 
-  const toggleAgent = () => {
+  const toggleAgent = useCallback(() => {
     if (agentStatus === 'running') {
       stopRuntime()
       return
     }
     startRuntime()
-  }
+  }, [agentStatus, startRuntime, stopRuntime])
+
+  const handleCancelTask = useCallback(
+    (_id: string) => {
+      refresh()
+    },
+    [refresh],
+  )
+
+  const handleRetryTask = useCallback(
+    (_id: string) => {
+      refresh()
+    },
+    [refresh],
+  )
+
+  const handleSubmitMission = useCallback((_name: string) => {
+    // visual only — would dispatch submit_mission message
+  }, [])
 
   const connectionLabel =
     connectionState === 'connected'
@@ -44,25 +71,32 @@ function App() {
       <div className="main-content">
         <aside className="sidebar">
           <nav className="nav-tabs">
-            {(['world', 'agents', 'planning', 'memory'] as const).map((tab) => (
+            {TABS.map((tab) => (
               <button
                 key={tab}
                 className={`nav-tab ${activeTab === tab ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab === 'planning'
+                  ? 'Planning'
+                  : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
           </nav>
         </aside>
 
         <main className="main-panel">
+          {activeTab === 'dashboard' && (
+            <Dashboard snapshot={snapshot} />
+          )}
+
           {activeTab === 'world' && (
             <div className="tab-content">
               <h2>World Model</h2>
               <p className="world-meta">
-                Position ({snapshot.world.position.x.toFixed(2)}, {snapshot.world.position.y.toFixed(2)}) ·
-                Confidence {snapshot.world.confidence.toFixed(2)} ·
+                Position ({snapshot.world.position.x.toFixed(2)},{' '}
+                {snapshot.world.position.y.toFixed(2)}) · Confidence{' '}
+                {snapshot.world.confidence.toFixed(2)} ·{' '}
                 {snapshot.world.objects.length} objects
               </p>
               <div className="world-visualizer">
@@ -79,14 +113,7 @@ function App() {
                   <p className="empty-state">No agents registered on runtime.</p>
                 )}
                 {snapshot.agents.map((agent) => (
-                  <div key={agent.name} className="agent-card">
-                    <div className="agent-header">
-                      <h3>{agent.name}</h3>
-                      <span className={`status-dot status-${agent.status}`} />
-                    </div>
-                    <p>Type: Registered Agent</p>
-                    <p>Status: {agent.status}</p>
-                  </div>
+                  <AgentCard key={agent.name} agent={agent} />
                 ))}
                 <button
                   className="start-btn"
@@ -106,46 +133,35 @@ function App() {
           {activeTab === 'planning' && (
             <div className="tab-content">
               <h2>Planning & Tasks</h2>
+              <MissionForm onSubmit={handleSubmitMission} />
               <div className="task-list">
                 {snapshot.tasks.length === 0 && (
-                  <p className="empty-state">No tasks yet. Start the runtime to begin.</p>
+                  <p className="empty-state">
+                    No tasks yet. Start the runtime to begin.
+                  </p>
                 )}
                 {snapshot.tasks.map((task) => (
-                  <div key={task.id} className={`task-item ${task.status}`}>
-                    <span className="task-name">{task.name}</span>
-                    <span className="task-status">{task.status}</span>
-                  </div>
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    onCancel={handleCancelTask}
+                    onRetry={handleRetryTask}
+                  />
                 ))}
               </div>
             </div>
           )}
 
-          {activeTab === 'memory' && (
-            <div className="tab-content">
-              <h2>Memory</h2>
-              <div className="memory-stats">
-                <div className="stat-card">
-                  <h4>Short Term</h4>
-                  <p>{snapshot.memory.shortTerm} items</p>
-                </div>
-                <div className="stat-card">
-                  <h4>Long Term</h4>
-                  <p>{snapshot.memory.longTerm} items</p>
-                </div>
-                <div className="stat-card">
-                  <h4>Knowledge Graph</h4>
-                  <p>{snapshot.memory.knowledgeGraph} nodes</p>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === 'memory' && <MemoryGraph memory={snapshot.memory} />}
         </main>
 
         <aside className="logs-panel">
           <h3>Logs</h3>
           <div className="logs-list">
             {snapshot.logs.map((log, i) => (
-              <div key={i} className="log-item">{log}</div>
+              <div key={i} className="log-item">
+                {log}
+              </div>
             ))}
           </div>
         </aside>

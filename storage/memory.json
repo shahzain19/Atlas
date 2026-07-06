@@ -1,0 +1,31 @@
+{
+  "events": [
+    {
+      "type": "TASK_FAILURE",
+      "timestamp": 1783320499354,
+      "payload": {
+        "taskId": "t1",
+        "error": "Persistent Failure"
+      },
+      "priority": 3,
+      "metadata": {
+        "category": "operation",
+        "importance": 1
+      }
+    },
+    {
+      "type": "TASK_FAILURE",
+      "timestamp": 1783320499414,
+      "payload": {
+        "taskId": "t1",
+        "error": "Persistent Failure"
+      },
+      "priority": 3,
+      "metadata": {
+        "category": "operation",
+        "importance": 1
+      }
+    }
+  ],
+  "lastUpdate": 1783320499414
+}

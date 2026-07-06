@@ -27,6 +27,14 @@ import { Logger } from "../Logging/Logger";
 import { PluginManager } from "../PluginManager/PluginManager";
 import { HardwareAbstractionLayer } from "../../atlas-hardware/HAL/HardwareAbstractionLayer";
 import { HardwareBridge, createDefaultHardwareStack } from "../../atlas-hardware/Bridge/HardwareBridge";
+import { EventHistory } from "../../atlas-memory/History/EventHistory";
+import { GridMap } from "../../atlas-memory/Map/GridMap";
+import { ObjectDatabase } from "../../atlas-memory/Objects/ObjectDatabase";
+import { ObstacleTracker } from "../../atlas-memory/Obstacles/ObstacleTracker";
+import { HumanTracker } from "../../atlas-memory/Humans/HumanTracker";
+import { RobotState } from "../../atlas-memory/Robots/RobotState";
+import { SceneGraph } from "../../atlas-memory/Scene/SceneGraph";
+import { SemanticMap } from "../../atlas-memory/SemanticMap/SemanticMap";
 
 export class AtlasRuntime {
   private eventBus: EventBus;
@@ -53,6 +61,14 @@ export class AtlasRuntime {
   private pluginManager: PluginManager;
   private hal: HardwareAbstractionLayer;
   private bridge: HardwareBridge;
+  private eventHistory: EventHistory;
+  private gridMap: GridMap;
+  private objectDb: ObjectDatabase;
+  private obstacleTracker: ObstacleTracker;
+  private humanTracker: HumanTracker;
+  private robotState: RobotState;
+  private sceneGraph: SceneGraph;
+  private _semanticMap: SemanticMap;
   private active = false;
 
   constructor() {
@@ -76,6 +92,14 @@ export class AtlasRuntime {
     this.config = new Configuration();
     this.logger = new Logger();
     this.pluginManager = new PluginManager(this);
+    this.eventHistory = new EventHistory();
+    this.gridMap = new GridMap(0.5, 200, 200);
+    this.objectDb = new ObjectDatabase();
+    this.obstacleTracker = new ObstacleTracker();
+    this.humanTracker = new HumanTracker();
+    this.robotState = new RobotState();
+    this.sceneGraph = new SceneGraph();
+    this._semanticMap = new SemanticMap();
     const stack = createDefaultHardwareStack(this.hardwareManager);
     this.hal = stack.hal;
     this.bridge = stack.bridge;
@@ -155,6 +179,38 @@ export class AtlasRuntime {
 
   get plugins() {
     return this.pluginManager;
+  }
+
+  get eventLog() {
+    return this.eventHistory;
+  }
+
+  get map() {
+    return this.gridMap;
+  }
+
+  get objects() {
+    return this.objectDb;
+  }
+
+  get obstacles() {
+    return this.obstacleTracker;
+  }
+
+  get humans() {
+    return this.humanTracker;
+  }
+
+  get robots() {
+    return this.robotState;
+  }
+
+  get scene() {
+    return this.sceneGraph;
+  }
+
+  get semanticMap() {
+    return this._semanticMap;
   }
 
   /**
