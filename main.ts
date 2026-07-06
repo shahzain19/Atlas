@@ -1,138 +1,75 @@
-import { AtlasRuntime } from "./atlas-runtime/Lifecycle/AtlasRuntime";
-import { SystemAgent } from "./atlas-agents/SystemAgent/SystemAgent";
-import { TaskAgent } from "./atlas-agents/TaskAgent/TaskAgent";
-import { VisionAgent } from "./atlas-agents/VisionAgent/VisionAgent";
-import { NavigationAgent } from "./atlas-agents/NavigationAgent/NavigationAgent";
-import { tryInitCppBridge } from "./atlas-hardware/Bridge/HardwareBridge";
+import { Atlas } from "./atlas-api";
 
-const atlas = new AtlasRuntime();
+async function main() {
+  const atlas = new Atlas({ autoStart: true });
 
-// Register Agents
-atlas.agents.register(new SystemAgent());
-atlas.agents.register(new TaskAgent(atlas));
-atlas.agents.register(new VisionAgent(atlas));
-atlas.agents.register(new NavigationAgent(atlas));
+  // --- Robot Demo ---
+  const robot = atlas.robot("rover-1", { name: "Survey Rover" });
 
-// Register C++-backed hardware drivers via hardware daemon
-void tryInitCppBridge(atlas.hardware).then((daemon) => {
-  if (daemon) {
-    (globalThis as any).__cppDaemon = daemon;
-    console.log("[main] C++ hardware bridge active");
-  } else {
-    console.log("[main] C++ hardware bridge unavailable, using TS fallback drivers");
-  }
-});
+  atlas.on("GPS_UPDATE", (e) => {
+    const pos = e.payload as any;
+    console.log(`📍 Position: ${pos.x?.toFixed(4)}, ${pos.y?.toFixed(4)}`);
+  });
 
-// ROS2 event bridges
-atlas.ros.bridgeEventToTopic("TASK_FAILURE", "/atlas/task_failure", "std_msgs/String");
-atlas.ros.bridgeEventToTopic("MISSION_COMPLETED", "/atlas/mission_completed", "std_msgs/String");
+  atlas.on("OBJECT_DETECTED", (e) => {
+    const d = e.payload as any;
+    console.log(`🔍 Detected: ${d.object} (${(d.confidence * 100).toFixed(0)}%)`);
+  });
 
-// Debug events
-atlas.bus.on("TICK", (event) => {
-  // console.log(`[EVENT] ${event.type} dt=${event.payload.dt}ms`);
-});
+  console.log("\n--- Exploring area ---");
+  await robot.explore();
 
-atlas.bus.on("TASK_REQUEST", (event) => {
-  console.log(
-    `[EVENT] Task Requested: ${event.payload.name} [Category: ${event.metadata?.category}, Importance: ${event.metadata?.importance}]`
-  );
-});
+  console.log("\n--- Scanning environment ---");
+  const scan = await robot.scan();
+  console.log(`Found ${scan.objects.length} objects`);
 
-// Start Atlas
-atlas.start();
+  console.log("\n--- Navigating to target ---");
+  await robot.navigateTo({ x: 37.775, y: -122.418, z: 0 });
 
-// 🚀 Submit a full mission
-setTimeout(async () => {
-  console.log("\n--- STARTING MISSION ---");
-  await atlas.submitMission({
-    id: "mission-001",
-    name: "Critical Infrastructure Inspection",
-    status: "pending",
+  const status = robot.getStatus();
+  console.log(`\n📍 Position: ${status.position.x?.toFixed(4)}, ${status.position.y?.toFixed(4)}`);
+
+  // --- Drone Demo ---
+  const drone = atlas.drone("quad-1", { name: "Quad Explorer" });
+
+  console.log("\n--- Drone taking off ---");
+  await drone.takeoff(15);
+
+  console.log("\n--- Drone flying to point ---");
+  await drone.flyTo({ latitude: 37.78, longitude: -122.42, altitude: 20 });
+
+  console.log("\n--- Drone capturing image ---");
+  const img = await drone.captureImage();
+  console.log(`Captured ${img.width}x${img.height} image`);
+
+  console.log("\n--- Drone returning home ---");
+  await drone.returnHome();
+
+  // --- Fleet Demo ---
+  const fleet = atlas.fleet();
+  fleet.register("rover-1", "robot");
+  fleet.register("quad-1", "drone");
+
+  const fStatus = fleet.monitor();
+  console.log(`\n🚀 Fleet: ${fStatus.healthy}/${fStatus.total} healthy`);
+
+  console.log("\n--- Deploying fleet mission ---");
+  await fleet.deploy({
+    name: "Area Survey",
     goals: [
-      {
-        id: "goal-1",
-        description: "Inspect Turbine #7",
-        priority: 1,
-        isCompleted: false,
-      },
+      { description: "Survey north quadrant", priority: 1 },
+      { description: "Verify no obstacles", priority: 2 },
     ],
   });
-  console.log("--- MISSION FINISHED ---\n");
-}, 1000);
 
-// 💡 Simulate an external task request after 2 seconds
-setTimeout(async () => {
-  await atlas.emit({
-    type: "TASK_REQUEST",
-    timestamp: Date.now(),
-    payload: { name: "Autonomous Survey" },
-  });
-}, 2000);
+  console.log("\n--- Broadcasting fleet signal ---");
+  await fleet.broadcast("FORMATION_KEEP");
 
-// 🚨 Simulate a critical failure after 3 seconds
-setTimeout(async () => {
-  await atlas.emit({
-    type: "TASK_FAILURE",
-    timestamp: Date.now(),
-    payload: { error: "Battery Critical", code: 500 },
-  });
-}, 3500);
+  console.log(`\n📊 Atlas Status:`, atlas.status);
 
-// 📸 Simulate a vision event after 4 seconds
-setTimeout(async () => {
-  console.log("\n--- SIMULATING VISION EVENT ---");
-  await atlas.emit({
-    type: "IMAGE_CAPTURED",
-    timestamp: Date.now(),
-    payload: { camera: "front-depth" },
-  });
-}, 4000);
-
-// 🛰️ Simulate a GPS update after 4.5 seconds
-setTimeout(async () => {
-  console.log("\n--- SIMULATING GPS UPDATE ---");
-  let coords: any;
-  try {
-    coords = await atlas.hardware.readSensor("NMEAGPS");
-  } catch (err) {
-    console.warn("[main] NMEAGPS read failed:", (err as Error).message);
-    console.log("[main] Falling back to synthetic GPS position for demo.");
-    const t = Date.now() / 1000;
-    coords = {
-      lat: 37.7749 + Math.sin(t) * 0.001,
-      lng: -122.4194 + Math.cos(t) * 0.001,
-      alt: 10,
-      accuracy: 2.5,
-    };
+  if (atlas.active) {
+    console.log("\nAtlas running. Press Ctrl+C to stop.");
   }
+}
 
-  // Update state
-  await atlas.emit({
-    type: "GPS_UPDATE",
-    source: "NMEAGPS",
-    timestamp: Date.now(),
-    payload: { x: coords.lat, y: coords.lng, z: coords.alt, uncertainty: 0.1 },
-  });
-
-  // Manually emit an object detection with position for SLAM demonstration
-  await atlas.emit({
-    type: "OBJECT_DETECTED",
-    source: "VisionAgent",
-    timestamp: Date.now(),
-    payload: { 
-      object: "Wind Turbine", 
-      confidence: 0.95, 
-      position: { x: coords.lat + 0.01, y: coords.lng + 0.01, z: coords.alt },
-      uncertainty: 0.05 
-    },
-  });
-
-  const state = atlas.perception.getState();
-  console.log(`[Perception] Current State Estimate:`, state.position);
-  console.log(`[Perception] Confidence: ${state.confidence.toFixed(2)}`);
-
-  const map = atlas.slam.getMap();
-  console.log(`[SLAM] Map Objects:`, map.objects.map(obj => `${obj.label} at x=${obj.position.x.toFixed(2)}`));
-}, 4500);
-
-// Keep running (the demo can be interrupted with Ctrl+C)
+main().catch(console.error);

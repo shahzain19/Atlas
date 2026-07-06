@@ -7,7 +7,9 @@ setup(
     author="Atlas Team",
     packages=find_packages(),
     python_requires=">=3.8",
-    install_requires=[],
+    install_requires=[
+        "websockets>=12.0",
+    ],
     extras_require={
         "dev": ["pytest", "black", "flake8"],
     },

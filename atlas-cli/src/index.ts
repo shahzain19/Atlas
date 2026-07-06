@@ -1,54 +1,130 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { AtlasRuntime } from "../../atlas-runtime/Lifecycle/AtlasRuntime";
+import { Atlas } from "../../atlas-api";
 import { logger, LogLevel } from "../../atlas-runtime/Logging/Logger";
 import { Configuration } from "../../atlas-runtime/Configuration/Configuration";
 import { FleetTelemetry } from "../../atlas-fleet/Telemetry/FleetTelemetry";
+import { StudioServer } from "../../atlas-runtime/Studio/StudioServer";
 
 const program = new Command();
 
 program
   .name("atlas")
-  .description("Universal software platform for intelligent machines")
+  .description("Universal platform for intelligent machines")
   .version("1.0.0");
 
-// Run command
 program
   .command("run")
   .description("Start the Atlas runtime")
   .option("-c, --config <path>", "Path to configuration file", "config.json")
   .option("-v, --verbose", "Enable verbose logging")
+  .option("-p, --port <port>", "Studio server port", "8080")
+  .option("--no-studio", "Skip starting the Studio WebSocket server")
   .action(async (options) => {
-    console.log("⚡ Starting Atlas runtime...");
-
-    // Set log level
     if (options.verbose) {
       logger.setLevel(LogLevel.DEBUG);
-      logger.debug("CLI", "Verbose logging enabled");
     }
 
-    // Initialize runtime
-    const runtime = new AtlasRuntime();
-    const config = new Configuration({ path: options.config });
+    const atlas = new Atlas({ autoStart: true });
 
-    logger.info("CLI", `Using config file: ${options.config}`);
-    console.log("🚀 Atlas runtime running! Press Ctrl+C to stop");
+    if (options.studio !== false) {
+      const server = new StudioServer(atlas.getRuntime() as any);
+      await server.start({ port: Number(options.port), host: "0.0.0.0" });
+    }
 
-    // Start the runtime
-    runtime.start();
+    console.log("🚀 Atlas running. Press Ctrl+C to stop.");
+    console.log(`   Status: ${atlas.status.agents} agents, ${atlas.status.tasks} tasks`);
 
-    // Handle graceful shutdown
     process.on("SIGINT", () => {
-      console.log("\n🛑 Stopping Atlas runtime...");
+      console.log("\n🛑 Stopping...");
+      atlas.stop();
       process.exit(0);
     });
 
-    // Keep process alive
     setInterval(() => {}, 1000);
   });
 
-// Status command
+program
+  .command("robot")
+  .description("Control a robot: robot <command>")
+  .argument("<command>", "explore | scan | navigate | status")
+  .argument("[x]", "X coordinate or first arg")
+  .argument("[y]", "Y coordinate")
+  .action(async (command, x, y) => {
+    const atlas = new Atlas({ autoStart: true });
+    const robot = atlas.robot();
+
+    switch (command) {
+      case "explore":
+        console.log("🤖 Exploring...");
+        await robot.explore();
+        console.log("✅ Done");
+        break;
+      case "scan":
+        console.log("📷 Scanning...");
+        const scan = await robot.scan();
+        console.log(`Found ${scan.objects.length} objects`);
+        scan.objects.forEach((o) =>
+          console.log(`  ${o.label} (${(o.confidence * 100).toFixed(0)}%)`)
+        );
+        break;
+      case "navigate":
+        await robot.navigateTo({ x: Number(x), y: Number(y), z: 0 });
+        console.log(`📍 Navigated to (${x}, ${y})`);
+        break;
+      case "status":
+        const s = robot.getStatus();
+        console.log(`Position: (${s.position.x?.toFixed(4)}, ${s.position.y?.toFixed(4)})`);
+        console.log(`Battery: ${s.battery}% | Speed: ${s.speed.toFixed(2)} | Mode: ${s.mode}`);
+        break;
+      default:
+        console.log(`Unknown command: ${command}`);
+    }
+    atlas.stop();
+  });
+
+program
+  .command("drone")
+  .description("Control a drone: drone <command>")
+  .argument("<command>", "takeoff | fly | land | capture | return | status")
+  .argument("[arg]", "Altitude or latitude")
+  .argument("[arg2]", "Longitude")
+  .action(async (command, arg, arg2) => {
+    const atlas = new Atlas({ autoStart: true });
+    const drone = atlas.drone();
+
+    switch (command) {
+      case "takeoff":
+        await drone.takeoff(Number(arg) || 10);
+        console.log(`✅ At altitude ${Number(arg) || 10}m`);
+        break;
+      case "fly":
+        await drone.flyTo({ latitude: Number(arg), longitude: Number(arg2), altitude: 20 });
+        console.log(`✅ Flew to (${arg}, ${arg2})`);
+        break;
+      case "land":
+        await drone.land();
+        console.log("✅ Landed");
+        break;
+      case "capture":
+        const img = await drone.captureImage();
+        console.log(`📸 Captured ${img.width}x${img.height}`);
+        break;
+      case "return":
+        await drone.returnHome();
+        console.log("✅ Returned home");
+        break;
+      case "status":
+        const s = drone.getStatus();
+        console.log(`Mode: ${s.mode} | Alt: ${s.altitude}m | Batt: ${s.battery}%`);
+        break;
+      default:
+        console.log(`Unknown command: ${command}`);
+    }
+    atlas.stop();
+  });
+
 program
   .command("status")
   .description("Check runtime and system status")
@@ -56,142 +132,121 @@ program
   .action(async (options) => {
     console.log("📊 Atlas System Status");
     console.log("------------------------");
-    console.log("✅ Configuration loaded from:", options.config);
-    console.log("🔧 Log level:", logger.getLevel ? LogLevel[logger.getLevel()] : "INFO");
-    console.log("\n💡 Tip: Use 'atlas run' to start the full runtime!");
+    console.log(`✅ Config: ${options.config}`);
+    console.log(`🔧 Log level: ${logger.getLevel ? LogLevel[logger.getLevel()] : "INFO"}`);
+    console.log("\n💡 Commands:");
+    console.log("  atlas run          Start runtime + studio server");
+    console.log("  atlas robot ...    Control a robot");
+    console.log("  atlas drone ...    Control a drone");
+    console.log("  atlas simulate     Run simulation");
+    console.log("  atlas doctor       Check dependencies");
   });
 
-// Config command
 program
   .command("config")
   .description("Manage runtime configuration")
-  .option("-s, --set <key=value>", "Set configuration value (key=value)")
-  .option("-g, --get <key>", "Get configuration value for key")
-  .option("-l, --list", "List all configuration values")
-  .option("-c, --config <path>", "Path to configuration file", "config.json")
+  .option("-s, --set <key=value>", "Set config value")
+  .option("-g, --get <key>", "Get config value")
+  .option("-l, --list", "List all config values")
+  .option("-c, --config <path>", "Config file path", "config.json")
   .action(async (options) => {
     const config = new Configuration({ path: options.config });
 
     if (options.set) {
       const [key, ...valueParts] = options.set.split("=");
-      const value = valueParts.join("=");
-      config.set(key, value);
+      config.set(key, valueParts.join("="));
       config.save();
-      console.log(`✅ Set ${key} = ${value}`);
+      console.log(`✅ Set ${key} = ${valueParts.join("=")}`);
     } else if (options.get) {
-      const value = config.get(options.get);
-      console.log(`${options.get} =`, value);
+      console.log(`${options.get} =`, config.get(options.get));
     } else if (options.list) {
       console.log("📋 Configuration:");
-      const all = config.getAll();
-      for (const [k, v] of Object.entries(all)) {
+      for (const [k, v] of Object.entries(config.getAll())) {
         console.log(`  ${k}:`, v);
       }
-    } else {
-      console.log("ℹ️ Use --set, --get, or --list options!");
     }
   });
 
-// Telemetry command
 program
   .command("telemetry")
-  .description("Manage and view fleet telemetry")
-  .option("-l, --list", "List all registered nodes")
-  .option("-h, --health", "Show fleet health summary")
+  .description("View fleet telemetry")
+  .option("-l, --list", "List registered nodes")
+  .option("-h, --health", "Show fleet health")
   .action(async (options) => {
     const telemetry = new FleetTelemetry();
 
     if (options.list) {
-      console.log("📦 Registered Nodes:");
+      console.log("📦 Nodes:");
       const nodes = telemetry.getNodeStatus() as any[];
-      if (nodes.length === 0) {
-        console.log("  (no nodes registered yet)");
-      } else {
-        nodes.forEach((node) => {
-          console.log(`  - ${node.name} (${node.id}): ${node.status}`);
-        });
-      }
+      if (!nodes.length) console.log("  (none)");
+      else nodes.forEach((n) => console.log(`  ${n.name} (${n.id}): ${n.status}`));
     } else if (options.health) {
-      console.log("🏥 Fleet Health:");
-      console.log(`  Overall: ${(telemetry.getFleetHealth() * 100).toFixed(1)}%`);
-    } else {
-      console.log("ℹ️ Use --list or --health options!");
+      console.log(`🏥 Fleet health: ${(telemetry.getFleetHealth() * 100).toFixed(1)}%`);
     }
   });
 
-// Simulate command
 program
   .command("simulate")
-  .description("Run a simple simulation")
-  .option("-d, --duration <seconds>", "Simulation duration", "10")
-  .option("-n, --nodes <count>", "Number of simulated nodes", "3")
+  .description("Run a simulation")
+  .option("-d, --duration <seconds>", "Duration", "10")
+  .option("-n, --nodes <count>", "Simulated nodes", "3")
   .action(async (options) => {
     const duration = parseInt(options.duration);
     const numNodes = parseInt(options.nodes);
-    console.log(`🧪 Starting simulation (${duration}s, ${numNodes} nodes)...`);
+    console.log(`🧪 Simulating ${duration}s with ${numNodes} nodes...`);
 
-    // Create fleet telemetry and add simulated nodes
-    const telemetry = new FleetTelemetry();
+    const atlas = new Atlas({ autoStart: true });
+
+    const fleet = atlas.fleet();
     for (let i = 0; i < numNodes; i++) {
-      telemetry.registerNode({
-        id: `node-${i}`,
-        name: `Simulated Node ${i}`,
-        status: "online",
-        health: { battery: 0.8 + Math.random() * 0.2, cpu: 0.3 + Math.random() * 0.3, memory: 0.5 + Math.random() * 0.3, overall: 0.85 },
-        timestamp: Date.now()
-      });
+      fleet.register(`node-${i}`, "robot");
     }
 
     let elapsed = 0;
     const interval = setInterval(() => {
-      elapsed += 1;
-      console.log(`⏱️  Simulation: ${elapsed}s elapsed...`);
+      elapsed++;
+      const status = fleet.monitor();
+      process.stdout.write(`\r⏱️  ${elapsed}s · ${status.healthy}/${status.total} healthy`);
       if (elapsed >= duration) {
         clearInterval(interval);
-        console.log("✅ Simulation complete!");
-        console.log("\n🏥 Simulation Summary:");
-        console.log(`- Nodes: ${numNodes}`);
-        console.log(`- Fleet Health: ${(telemetry.getFleetHealth() * 100).toFixed(1)}%`);
+        console.log("\n✅ Simulation complete");
+        atlas.stop();
       }
     }, 1000);
   });
 
-// Doctor command
 program
   .command("doctor")
-  .description("Check system health and dependencies")
+  .description("Check system dependencies")
   .action(async () => {
-    console.log("🏥 Atlas System Check");
-    console.log("========================");
+    console.log("🏥 Atlas System Check\n");
 
-    // Check Node.js version
-    console.log(`✅ Node.js: ${process.version}`);
+    const checks: [string, () => string | null][] = [
+      ["Node.js", () => process.version],
+      ["TypeScript", () => { try { return require("typescript").version; } catch { return null; } }],
+      ["Jest", () => { try { return require("jest").version; } catch { return null; } }],
+      ["Commander.js", () => { try { return require("commander").version; } catch { return null; } }],
+      ["ws", () => { try { return require("ws").version; } catch { return null; } }],
+    ];
 
-    // Check TypeScript
-    try {
-      const tsVersion = require("typescript").version;
-      console.log(`✅ TypeScript: ${tsVersion}`);
-    } catch (e) {
-      console.log("❌ TypeScript: Not installed");
+    let allOk = true;
+    for (const [name, fn] of checks) {
+      const ver = fn();
+      const ok = ver !== null;
+      console.log(`${ok ? "✅" : "❌"} ${name}: ${ver || "not found"}`);
+      if (!ok) allOk = false;
     }
 
-    // Check Jest
+    // Check Python perception
     try {
-      const jestVersion = require("jest").version;
-      console.log(`✅ Jest: ${jestVersion}`);
-    } catch (e) {
-      console.log("❌ Jest: Not installed");
+      const { execSync } = require("child_process");
+      const pyVer = execSync("python3 --version").toString().trim();
+      console.log(`✅ Python3: ${pyVer}`);
+    } catch {
+      console.log("⚠️  Python3: optional, needed for perception");
     }
 
-    // Check Commander
-    try {
-      const commanderVersion = require("commander").version;
-      console.log(`✅ Commander.js: ${commanderVersion}`);
-    } catch (e) {
-      console.log("❌ Commander.js: Not installed");
-    }
-
-    console.log("\n✅ System check complete!");
+    console.log(allOk ? "\n✅ All dependencies OK" : "\n⚠️  Some dependencies missing");
   });
 
 program.parse();

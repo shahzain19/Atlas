@@ -9,15 +9,21 @@
     "doc": "docs"
   },
   "scripts": {
-    "start": "ts-node main.ts",
-    "start:server": "ts-node server.ts",
+    "start": "npx tsx main.ts",
+    "start:server": "npx tsx server.ts",
     "sim": "cd atlas-simulation && npx vite",
     "studio": "cd atlas-studio && npx vite",
     "demo": "npx concurrently -n srv,sim,ui -c yellow,cyan,green \"npm run start:server\" \"npm run sim\" \"npm run studio\"",
+    "demo:robot": "npx tsx examples/demo-robot.ts",
+    "demo:drone": "npx tsx examples/demo-drone.ts",
+    "demo:fleet": "npx tsx examples/demo-fleet.ts",
+    "demo:quickstart": "npx tsx examples/demo-quickstart.ts",
+    "demo:agent": "npx tsx examples/demo-autonomous-agent.ts",
+    "demo:simulation": "npx tsx examples/demo-simulation.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "build:cli": "tsc -p atlas-cli/tsconfig.json",
-    "cli": "ts-node atlas-cli/src/index.ts"
+    "cli": "npx tsx atlas-cli/src/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -36,6 +42,7 @@
     "concurrently": "^10.0.3",
     "jest": "^30.4.2",
     "ts-jest": "^29.4.11",
+    "tsx": "^4.23.0",
     "typescript": "^5.5.0"
   }
 }

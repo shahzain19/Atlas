@@ -13,6 +13,13 @@ export class EventBus {
     this.listeners.get(eventType)!.push(handler);
   }
 
+  off(eventType: string, handler: EventHandler) {
+    const handlers = this.listeners.get(eventType);
+    if (!handlers) return;
+    const idx = handlers.indexOf(handler);
+    if (idx !== -1) handlers.splice(idx, 1);
+  }
+
   onAll(handler: EventHandler) {
     this.wildcardHandlers.push(handler);
   }
