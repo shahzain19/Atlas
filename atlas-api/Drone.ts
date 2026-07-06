@@ -1,4 +1,6 @@
 import { AtlasRuntime } from "../atlas-runtime/Lifecycle/AtlasRuntime";
+import { CameraSensor } from "../atlas-perception/Camera/CameraSensor";
+import { VisionProcessor } from "../atlas-ai/Vision/VisionProcessor";
 import { DroneStatus, GeoPosition, Position } from "./types";
 
 export interface DroneOptions {
@@ -12,11 +14,15 @@ export class Drone {
   private homePosition: Position = { x: 0, y: 0, z: 0 };
   private _altitude = 0;
   private _mode: DroneStatus["mode"] = "grounded";
+  private camera: CameraSensor;
+  private vision: VisionProcessor;
 
   constructor(runtime: AtlasRuntime, id: string, options?: DroneOptions) {
     this.runtime = runtime;
     this.id = id;
     this.name = options?.name || `Drone-${id}`;
+    this.camera = new CameraSensor({ width: 640, height: 480, fps: 15 });
+    this.vision = new VisionProcessor({ confidenceThreshold: 0.3 });
   }
 
   async takeoff(altitude = 10): Promise<void> {
@@ -97,18 +103,36 @@ export class Drone {
     this._altitude = endAlt;
   }
 
-  async captureImage(): Promise<{ width: number; height: number; timestamp: number }> {
+  async captureImage(): Promise<{ width: number; height: number; timestamp: number; objects: Array<{ label: string; confidence: number }> }> {
+    const frame = this.camera.captureFrame();
+    const objects = await this.vision.detectObjects(frame);
+
     await this.runtime.emit({
       type: "IMAGE_CAPTURED",
       source: this.name,
-      timestamp: Date.now(),
-      payload: { camera: "downward", droneId: this.id },
+      timestamp: frame.timestamp,
+      payload: { camera: "downward", droneId: this.id, width: frame.width, height: frame.height },
     });
 
+    for (const obj of objects) {
+      await this.runtime.emit({
+        type: "OBJECT_DETECTED",
+        source: this.name,
+        timestamp: frame.timestamp,
+        payload: {
+          object: obj.label,
+          confidence: obj.confidence,
+          position: obj.position || { x: frame.width / 2, y: frame.height / 2, z: 0 },
+          boundingBox: obj.boundingBox,
+        },
+      });
+    }
+
     return {
-      width: 640,
-      height: 480,
-      timestamp: Date.now(),
+      width: frame.width,
+      height: frame.height,
+      timestamp: frame.timestamp,
+      objects: objects.map(o => ({ label: o.label, confidence: o.confidence })),
     };
   }
 

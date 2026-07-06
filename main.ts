@@ -40,7 +40,10 @@ async function main() {
 
   console.log("\n--- Drone capturing image ---");
   const img = await drone.captureImage();
-  console.log(`Captured ${img.width}x${img.height} image`);
+  console.log(`Captured ${img.width}x${img.height} — ${img.objects.length} objects detected`);
+  for (const o of img.objects) {
+    console.log(`   ${o.label} (${(o.confidence * 100).toFixed(0)}%)`);
+  }
 
   console.log("\n--- Drone returning home ---");
   await drone.returnHome();
