@@ -15,6 +15,8 @@ atlas_perception/detection/__init__.py
 atlas_perception/detection/object_detector.py
 atlas_perception/gps/__init__.py
 atlas_perception/gps/gps_sensor.py
+atlas_perception/hardware/__init__.py
+atlas_perception/hardware/cpp_bridge.py
 atlas_perception/imu/__init__.py
 atlas_perception/imu/imu_sensor.py
 atlas_perception/lidar/__init__.py

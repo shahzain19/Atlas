@@ -10,9 +10,10 @@
   },
   "scripts": {
     "start": "ts-node main.ts",
+    "start:server": "ts-node server.ts",
     "sim": "cd atlas-simulation && npx vite",
     "studio": "cd atlas-studio && npx vite",
-    "demo": "npx concurrently -n run,sim,ui -c yellow,cyan,green \"npm start\" \"npm run sim\" \"npm run studio\"",
+    "demo": "npx concurrently -n srv,sim,ui -c yellow,cyan,green \"npm run start:server\" \"npm run sim\" \"npm run studio\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "build:cli": "tsc -p atlas-cli/tsconfig.json",

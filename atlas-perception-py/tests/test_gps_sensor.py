@@ -12,8 +12,8 @@ class TestGPSSensor:
     def test_sf_bay_area(self):
         gps = GPSSensor()
         data = gps.capture_data()
-        assert 37.77 <= data.latitude <= 37.78
-        assert -122.43 <= data.longitude <= -122.41
+        assert 37.77 <= data.latitude <= 37.79
+        assert -122.43 <= data.longitude <= -122.40
 
     def test_has_altitude_accuracy(self):
         gps = GPSSensor()

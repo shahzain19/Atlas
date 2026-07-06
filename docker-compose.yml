@@ -49,6 +49,24 @@ services:
     depends_on:
       - runtime
 
+  perception-py:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    ports:
+      - "9090:9090"
+    volumes:
+      - .:/app
+    working_dir: /app/atlas-perception-py
+    environment:
+      ATLAS_WS_URL: ws://runtime:8080/api/ws
+    command:
+      - sh
+      - -c
+      - "pip install -e . && python perception_daemon.py"
+    depends_on:
+      - runtime
+
   test:
     profiles:
       - test

@@ -1,0 +1,11 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install atlas-perception-py and its dependencies
+COPY atlas-perception-py/ /app/atlas-perception-py/
+RUN pip install --no-cache-dir -e /app/atlas-perception-py
+
+# Also install atlas-ai-py if needed
+COPY atlas-ai-py/ /app/atlas-ai-py/
+RUN pip install --no-cache-dir -e /app/atlas-ai-py
