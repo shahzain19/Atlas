@@ -1,0 +1,14 @@
+{
+  "name": "@atlas/sdk",
+  "version": "1.0.0",
+  "description": "JavaScript SDK for the Atlas intelligent machine platform",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": ["atlas", "robotics", "sdk", "drones"],
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

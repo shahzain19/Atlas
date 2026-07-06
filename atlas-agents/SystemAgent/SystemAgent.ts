@@ -6,12 +6,6 @@ export class SystemAgent extends BaseAgent {
   readonly name = "SystemAgent";
 
   handle(event: Event): Decision[] {
-    if (event.type !== "TICK") {
-      return [];
-    }
-
-    console.log("[SystemAgent] Monitoring runtime...");
-
     return [];
   }
 }

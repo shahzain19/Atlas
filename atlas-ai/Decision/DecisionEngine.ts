@@ -9,16 +9,17 @@ export class DecisionEngine {
     this.runtime = runtime;
   }
 
+  private tickCounter = 0;
+
   decide(ctx: DecisionContext): Decision[] {
     const event = ctx.event;
 
     const decisions: Decision[] = [];
 
-    // 🔥 RULE 1: system heartbeat reaction
     if (event.type === "TICK") {
       const dt = event.payload.dt;
 
-      if (dt > 40) {
+      if (dt > 40 && this.tickCounter % 50 === 0) {
         decisions.push({
           name: "HighLatencyResponse",
           confidence: 0.8,
@@ -33,6 +34,7 @@ export class DecisionEngine {
           },
         });
       }
+      this.tickCounter++;
     }
 
     return decisions;
