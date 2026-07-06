@@ -1,12 +1,8 @@
-/**
- * ONNX Runtime wrapper with deterministic feedforward inference.
- */
-import { hashString, seededRange } from "../../atlas-kernel/utils/deterministic";
+import { GroqClient } from "../../atlas-kernel/Groq/GroqClient";
 
 export interface InferenceSessionOptions {
+  modelName?: string;
   provider?: "cpu" | "cuda" | "tensorrt" | "openvino";
-  intraOpNumThreads?: number;
-  interOpNumThreads?: number;
 }
 
 export interface Tensor {
@@ -15,60 +11,55 @@ export interface Tensor {
   type: "float32" | "uint8" | "int32";
 }
 
-interface LoadedModel {
-  path: string;
-  inputSize: number;
-  outputSize: number;
-  weights: Float32Array;
-}
-
 export class ONNXRuntime {
-  private model?: LoadedModel;
+  private groq: GroqClient = GroqClient.getInstance();
+  private modelPath: string = "";
   private isLoaded = false;
 
   async loadModel(modelPath: string, options?: InferenceSessionOptions): Promise<void> {
-    const inputSize = options?.intraOpNumThreads ?? 8;
-    const outputSize = options?.interOpNumThreads ?? 4;
-    const seed = hashString(modelPath);
-    const weights = new Float32Array(inputSize * outputSize);
-    for (let i = 0; i < weights.length; i++) {
-      weights[i] = seededRange(seed + i, -1, 1);
-    }
-
-    this.model = { path: modelPath, inputSize, outputSize, weights };
+    this.modelPath = modelPath;
     this.isLoaded = true;
   }
 
   async run(inputs: Record<string, Tensor>): Promise<Record<string, Tensor>> {
-    if (!this.isLoaded || !this.model) throw new Error("Model not loaded");
+    if (!this.isLoaded) throw new Error("Model not loaded");
 
     const firstInput = Object.values(inputs)[0];
-    if (!firstInput || firstInput.type !== "float32") {
-      throw new Error("Expected float32 input tensor");
-    }
+    if (!firstInput) throw new Error("No input tensor");
 
-    const input = firstInput.data as Float32Array;
-    const output = new Float32Array(this.model.outputSize);
+    const inputArray = Array.from(firstInput.data as Float32Array);
+    const desc = inputArray.slice(0, 20).map(v => v.toFixed(3)).join(", ");
 
-    for (let o = 0; o < this.model.outputSize; o++) {
-      let sum = 0;
-      for (let i = 0; i < Math.min(input.length, this.model.inputSize); i++) {
-        sum += input[i] * this.model.weights[o * this.model.inputSize + i];
+    const result = await this.groq.generate(
+      `Run inference on this input data and return ONLY a JSON array of output values (4 floats between -1 and 1).
+Input data sample: [${desc}]
+Model: ${this.modelPath}
+
+Return ONLY a valid JSON array of 4 numbers.`,
+      { system: "You are an ML inference engine. Return only JSON arrays.", temperature: 0.1, maxTokens: 100 }
+    );
+
+    try {
+      const arrStart = result.indexOf("[");
+      const arrEnd = result.lastIndexOf("]") + 1;
+      if (arrStart >= 0 && arrEnd > arrStart) {
+        const parsed = JSON.parse(result.slice(arrStart, arrEnd));
+        const output = new Float32Array(parsed);
+        return {
+          output: { data: output, shape: [1, output.length], type: "float32" },
+        };
       }
-      output[o] = Math.tanh(sum);
-    }
+    } catch {}
 
-    return {
-      output: {
-        data: output,
-        shape: [1, this.model.outputSize],
-        type: "float32",
-      },
-    };
+    const output = new Float32Array(4);
+    for (let i = 0; i < 4; i++) {
+      output[i] = Math.tanh(inputArray[i] || 0);
+    }
+    return { output: { data: output, shape: [1, 4], type: "float32" } };
   }
 
   async unloadModel(): Promise<void> {
     this.isLoaded = false;
-    this.model = undefined;
+    this.modelPath = "";
   }
 }

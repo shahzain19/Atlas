@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from atlas_ai.types import hash_string, seeded_range, seeded_int
+from atlas_ai.groq_client import GroqClient
 
 
 class Observation:
@@ -28,17 +28,21 @@ class Policy(ABC):
 
 class EpsilonGreedyPolicy(Policy):
     def __init__(self):
+        self.groq = GroqClient.get_instance()
         self.reward_sum = 0.0
         self.updates = 0
 
     async def select_action(self, observation: Observation) -> Action:
-        seed = hash_string(json.dumps(observation.state, sort_keys=True)) + int(observation.timestamp)
-        actions = ["move_forward", "turn_left", "turn_right", "stop"]
-        index = seeded_int(seed, 0, len(actions) - 1)
+        context = json.dumps(observation.state, default=str)
+        actions = ["move_forward", "turn_left", "turn_right", "stop", "scan", "return"]
+
+        result = await self.groq.decide(context, actions)
+
+        import random
         return Action(
-            action_type=actions[index],
-            params={"speed": seeded_range(seed + 1, 0.1, 1.0)},
-            confidence=seeded_range(seed + 2, 0.5, 1.0),
+            action_type=result.get("action", actions[0]),
+            params={"speed": random.uniform(0.5, 1.0)},
+            confidence=result.get("confidence", 0.5),
         )
 
     def update(self, reward: float):

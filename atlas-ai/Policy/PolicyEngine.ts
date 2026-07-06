@@ -1,7 +1,4 @@
-/**
- * Policy Engine - selects actions based on observations
- */
-import { hashString, seededRange } from "../../atlas-kernel/utils/deterministic";
+import { GroqClient } from "../../atlas-kernel/Groq/GroqClient";
 
 export interface Observation {
   state: Record<string, unknown>;
@@ -20,17 +17,25 @@ export abstract class Policy {
 }
 
 export class EpsilonGreedyPolicy extends Policy {
+  private groq: GroqClient;
   private rewardSum = 0;
   private updates = 0;
 
+  constructor() {
+    super();
+    this.groq = GroqClient.getInstance();
+  }
+
   async selectAction(observation: Observation): Promise<Action> {
-    const seed = hashString(JSON.stringify(observation.state)) + observation.timestamp;
-    const actions = ["move_forward", "turn_left", "turn_right", "stop"];
-    const index = Math.floor(seededRange(seed, 0, actions.length));
+    const context = JSON.stringify(observation.state);
+    const actions = ["move_forward", "turn_left", "turn_right", "stop", "scan", "return"];
+
+    const result = await this.groq.decide(context, actions);
+
     return {
-      type: actions[index],
-      params: { speed: seededRange(seed + 1, 0.1, 1) },
-      confidence: seededRange(seed + 2, 0.5, 1),
+      type: result.action,
+      params: { speed: Math.random() * 0.5 + 0.5 },
+      confidence: result.confidence,
     };
   }
 
@@ -44,7 +49,6 @@ export class EpsilonGreedyPolicy extends Policy {
   }
 }
 
-/** @deprecated Use EpsilonGreedyPolicy */
 export class RandomPolicy extends EpsilonGreedyPolicy {}
 
 export class PolicyEngine {

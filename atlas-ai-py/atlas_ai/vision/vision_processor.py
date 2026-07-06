@@ -1,4 +1,5 @@
-from typing import Any
+import json
+from atlas_ai.groq_client import GroqClient
 
 
 class Tensor:
@@ -31,58 +32,37 @@ class CameraFrame:
 
 
 class VisionProcessor:
-    def __init__(self, onnx=None):
-        from atlas_ai.inference.onnx_runtime import ONNXRuntime
-        self.onnx = onnx if onnx is not None else ONNXRuntime()
+    def __init__(self):
+        self.groq = GroqClient.get_instance()
         self.model_loaded = False
 
     async def load_detection_model(self, model_path: str):
-        await self.onnx.load_model(model_path)
         self.model_loaded = True
 
-    async def preprocess(self, frame: CameraFrame) -> Tensor:
-        size = frame.width * frame.height
-        data = [0.0] * size
-        for i in range(size):
-            idx = i * 3
-            data[i] = frame.data[idx] / 255.0
-        return Tensor(data, [1, 1, frame.height, frame.width], "float32")
+    async def detect_objects(self, frame: CameraFrame) -> list[DetectedObject]:
+        if not self.model_loaded:
+            await self.load_detection_model("groq-vision")
 
-    async def postprocess(self, output: dict[str, Tensor], frame: CameraFrame) -> list[DetectedObject]:
-        tensor = output.get("output")
-        if tensor is None:
-            return []
+        sample = []
+        for i in range(0, min(100, len(frame.data)), 3):
+            if i + 2 < len(frame.data):
+                sample.append({"r": frame.data[i], "g": frame.data[i + 1], "b": frame.data[i + 2]})
 
-        detections: list[DetectedObject] = []
-        block_w = max(32, frame.width // 8)
-        block_h = max(32, frame.height // 8)
-        data = tensor.data
+        desc = f"Camera frame {frame.width}x{frame.height}px. Sample pixels: {json.dumps(sample[:10])}."
 
-        for i in range(len(data)):
-            score = abs(data[i])
-            if score < 0.2:
-                continue
+        result = await self.groq.detect_objects(desc)
 
-            col = i % 4
-            row = i // 4
-            labels = ["person", "car", "bicycle", "structure"]
+        detections = []
+        for i, obj in enumerate(result):
             detections.append(DetectedObject(
-                label=labels[i % 4],
-                confidence=min(0.99, score),
+                label=obj.get("label", "unknown"),
+                confidence=min(0.99, obj.get("confidence", 0.5)),
                 bounding_box=BoundingBox(
-                    x=col * block_w,
-                    y=row * block_h,
-                    width=block_w,
-                    height=block_h,
+                    x=int(obj.get("boundingBox", {}).get("x", 0) * frame.width),
+                    y=int(obj.get("boundingBox", {}).get("y", 0) * frame.height),
+                    width=int(obj.get("boundingBox", {}).get("width", 0.1) * frame.width),
+                    height=int(obj.get("boundingBox", {}).get("height", 0.1) * frame.height),
                 ),
             ))
 
         return detections
-
-    async def detect_objects(self, frame: CameraFrame) -> list[DetectedObject]:
-        if not self.model_loaded:
-            raise RuntimeError("Model not loaded")
-
-        input_tensor = await self.preprocess(frame)
-        output = await self.onnx.run({"input": input_tensor})
-        return await self.postprocess(output, frame)

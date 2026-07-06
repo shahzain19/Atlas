@@ -136,10 +136,10 @@ export class AutonomousAgent {
   private async plan(goal?: string): Promise<void> {
     this.state = AgentState.PLANNING;
     console.log("📋 Planning...");
-    const tasks = this.planner.generateTasks(goal || "Explore the environment");
+    const tasks = await this.planner.generateTasks(goal || "Explore the environment");
     console.log(`  - Generated ${tasks.length} tasks`);
     if (tasks.length > 0) {
-      this.currentTask = tasks[0];
+      this.currentTask = tasks[0]!;
       console.log(`  - Next task: ${this.currentTask.name}`);
     }
   }

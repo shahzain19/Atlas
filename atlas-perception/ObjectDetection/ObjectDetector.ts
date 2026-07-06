@@ -1,6 +1,4 @@
-/**
- * Object Detection using brightness-region blob analysis.
- */
+import { GroqClient } from "../../atlas-kernel/Groq/GroqClient";
 import { CameraFrame } from "../Camera/CameraSensor";
 
 export interface DetectedObject {
@@ -27,16 +25,16 @@ export interface ObjectDetectionConfig {
   maxDetections?: number;
 }
 
-const LABELS = ["Object", "Structure", "Obstacle", "Marker", "Surface"];
-
 export class ObjectDetector {
+  private groq: GroqClient;
   private config: ObjectDetectionConfig;
   private modelLoaded: boolean;
 
   constructor(config: ObjectDetectionConfig = {}) {
+    this.groq = GroqClient.getInstance();
     this.config = {
-      modelName: config.modelName || "atlas-blob-detector",
-      confidenceThreshold: config.confidenceThreshold || 0.5,
+      modelName: config.modelName || "groq-vision",
+      confidenceThreshold: config.confidenceThreshold || 0.3,
       iouThreshold: config.iouThreshold || 0.5,
       maxDetections: config.maxDetections || 20,
     };
@@ -48,59 +46,53 @@ export class ObjectDetector {
   }
 
   async detect(frame: CameraFrame): Promise<DetectedObject[]> {
-    if (!this.modelLoaded) {
-      await this.loadModel();
+    if (!this.modelLoaded) await this.loadModel();
+
+    const sample = [];
+    for (let i = 0; i < Math.min(60, frame.data.length); i += 3) {
+      sample.push({ r: frame.data[i], g: frame.data[i + 1], b: frame.data[i + 2] });
     }
 
-    const regions = this.findBrightRegions(frame);
-    const threshold = this.config.confidenceThreshold!;
-    const maxDetections = this.config.maxDetections!;
+    const desc = `Camera ${frame.width}x${frame.height}px. Frame type: ground exploration.
+Sample pixel data (RGB): ${JSON.stringify(sample)}.
+Brightness distribution: ${this.describeBrightness(frame)}.`;
 
-    return regions.slice(0, maxDetections).map((region, index) => ({
-      id: `det-${index}`,
-      label: LABELS[index % LABELS.length],
-      confidence: Math.min(0.99, threshold + region.score * (1 - threshold)),
-      boundingBox: region.box,
-      position: {
-        x: region.box.x + region.box.width / 2,
-        y: region.box.y + region.box.height / 2,
-        z: 0,
-      },
-    }));
+    const result = await this.groq.detectObjects(desc);
+
+    const threshold = this.config.confidenceThreshold!;
+    const maxDet = this.config.maxDetections!;
+
+    return result
+      .filter(obj => obj.confidence >= threshold)
+      .slice(0, maxDet)
+      .map((obj, i) => ({
+        id: `det-${i}`,
+        label: obj.label,
+        confidence: Math.min(0.99, obj.confidence),
+        boundingBox: {
+          x: Math.round(obj.boundingBox.x * frame.width),
+          y: Math.round(obj.boundingBox.y * frame.height),
+          width: Math.round(obj.boundingBox.width * frame.width),
+          height: Math.round(obj.boundingBox.height * frame.height),
+        },
+        position: {
+          x: obj.boundingBox.x * frame.width + (obj.boundingBox.width * frame.width) / 2,
+          y: obj.boundingBox.y * frame.height + (obj.boundingBox.height * frame.height) / 2,
+          z: 0,
+        },
+      }));
   }
 
-  private findBrightRegions(frame: CameraFrame): Array<{ box: DetectedObject["boundingBox"]; score: number }> {
-    const { width, height, data } = frame;
-    const block = 32;
-    const regions: Array<{ box: DetectedObject["boundingBox"]; score: number }> = [];
-
-    for (let by = 0; by < height; by += block) {
-      for (let bx = 0; bx < width; bx += block) {
-        let sum = 0;
-        let count = 0;
-        for (let y = by; y < Math.min(by + block, height); y++) {
-          for (let x = bx; x < Math.min(bx + block, width); x++) {
-            const idx = (y * width + x) * 3;
-            sum += (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
-            count += 1;
-          }
-        }
-        const avg = sum / count;
-        if (avg > 128) {
-          regions.push({
-            score: avg / 255,
-            box: {
-              x: bx,
-              y: by,
-              width: Math.min(block, width - bx),
-              height: Math.min(block, height - by),
-            },
-          });
-        }
-      }
+  private describeBrightness(frame: CameraFrame): string {
+    let sum = 0, min = 255, max = 0;
+    for (let i = 0; i < frame.data.length; i += 3) {
+      const avg = (frame.data[i] + frame.data[i + 1] + frame.data[i + 2]) / 3;
+      sum += avg;
+      if (avg < min) min = avg;
+      if (avg > max) max = avg;
     }
-
-    return regions.sort((a, b) => b.score - a.score);
+    const mean = sum / (frame.data.length / 3);
+    return `mean=${mean.toFixed(0)}, min=${min.toFixed(0)}, max=${max.toFixed(0)}`;
   }
 
   updateConfig(newConfig: Partial<ObjectDetectionConfig>): void {

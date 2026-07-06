@@ -10,12 +10,24 @@ GPSDataProvider = Callable[[], GPSData]
 
 def default_gps_provider() -> GPSData:
     timestamp = time.time()
-    seed = math.floor(timestamp / 1000)
+    elapsed = math.floor(timestamp / 100) % 10000
+    t = elapsed / 10000
+    base_lat = 37.7749
+    base_lng = -122.4194
+    radius = 0.008
+    lat = base_lat + math.sin(t * math.pi * 2) * radius
+    lng = base_lng + math.cos(t * math.pi * 0.7) * radius
+    altitude = 10 + math.sin(t * math.pi * 4) * 3
+    speed = 2 + math.sin(t * math.pi * 2) * 1.5
+    heading = (math.sin(t * math.pi * 2) * 180 + 180) % 360
+    ts_key = math.floor(timestamp / 200)
     return GPSData(
-        latitude=37.7749 + seeded_range(seed, 0, 0.01),
-        longitude=-122.4194 + seeded_range(seed + 1, 0, 0.01),
-        altitude=10 + seeded_range(seed + 2, 0, 5),
-        accuracy=2 + seeded_range(seed + 3, 0, 3),
+        latitude=lat + seeded_range(ts_key, -0.00005, 0.00005),
+        longitude=lng + seeded_range(ts_key + 1, -0.00005, 0.00005),
+        altitude=altitude + seeded_range(ts_key + 2, -0.2, 0.2),
+        speed=max(0, speed + seeded_range(ts_key + 3, -0.3, 0.3)),
+        heading=(heading + seeded_range(ts_key + 4, -2, 2)) % 360,
+        accuracy=1.5 + seeded_range(ts_key + 5, 0, 1.5),
         timestamp=timestamp,
     )
 

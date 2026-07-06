@@ -14,12 +14,27 @@ export type GPSDataProvider = () => GPSData;
 
 function defaultGPSProvider(): GPSData {
   const timestamp = Date.now();
-  const seed = Math.floor(timestamp / 1000);
+  const elapsed = Math.floor(timestamp / 100) % 10000;
+  const t = elapsed / 10000;
+
+  const baseLat = 37.7749;
+  const baseLng = -122.4194;
+  const radius = 0.008;
+
+  const lat = baseLat + Math.sin(t * Math.PI * 2) * radius;
+  const lng = baseLng + Math.cos(t * Math.PI * 0.7) * radius;
+
+  const altitude = 10 + Math.sin(t * Math.PI * 4) * 3;
+  const speed = 2 + Math.sin(t * Math.PI * 2) * 1.5;
+  const heading = (Math.sin(t * Math.PI * 2) * 180 + 180) % 360;
+
   return {
-    latitude: 37.7749 + seededRange(seed, 0, 0.01),
-    longitude: -122.4194 + seededRange(seed + 1, 0, 0.01),
-    altitude: 10 + seededRange(seed + 2, 0, 5),
-    accuracy: 2 + seededRange(seed + 3, 0, 3),
+    latitude: lat + seededRange(Math.floor(timestamp / 200), -0.00005, 0.00005),
+    longitude: lng + seededRange(Math.floor(timestamp / 200) + 1, -0.00005, 0.00005),
+    altitude: altitude + seededRange(Math.floor(timestamp / 200) + 2, -0.2, 0.2),
+    speed: Math.max(0, speed + seededRange(Math.floor(timestamp / 200) + 3, -0.3, 0.3)),
+    heading: (heading + seededRange(Math.floor(timestamp / 200) + 4, -2, 2)) % 360,
+    accuracy: 1.5 + seededRange(Math.floor(timestamp / 200) + 5, 0, 1.5),
     timestamp,
   };
 }

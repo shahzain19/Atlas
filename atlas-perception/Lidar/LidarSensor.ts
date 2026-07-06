@@ -52,18 +52,46 @@ export class LidarSensor {
 
   captureScan(): LidarScan {
     const points: LidarPoint[] = [];
-    const numPoints = 360;
     const timestamp = Date.now();
+    const numPoints = 360;
+    const maxRange = 100;
+    const walls: { angle: number; dist: number; width: number }[] = [
+      { angle: 0, dist: 30, width: Math.PI / 6 },
+      { angle: Math.PI / 2, dist: 20, width: Math.PI / 4 },
+      { angle: Math.PI, dist: 40, width: Math.PI / 3 },
+      { angle: -Math.PI / 2, dist: 25, width: Math.PI / 5 },
+    ];
 
     for (let i = 0; i < numPoints; i++) {
       const angle = (i / numPoints) * Math.PI * 2;
       const seed = this.scanIndex * 1000 + i;
-      const distance = 5 + seededRange(seed, 0, 10);
+
+      let minDist = maxRange;
+      for (const wall of walls) {
+        const da = angle - wall.angle;
+        const wrappedDa = Math.atan2(Math.sin(da), Math.cos(da));
+        if (Math.abs(wrappedDa) < wall.width / 2) {
+          const wallDist = wall.dist / Math.cos(wrappedDa);
+          if (wallDist > 0 && wallDist < minDist) {
+            minDist = wallDist;
+          }
+        }
+      }
+
+      if (i % 8 === 0) {
+        const scatterDist = 1 + seededRange(seed + 100, 0, maxRange - 1);
+        minDist = Math.min(minDist, scatterDist);
+      }
+
+      const noise = seededRange(seed, -0.05, 0.05);
+      const distance = minDist * (1 + noise);
+      const intensity = distance < 5 ? 0.9 : Math.max(0.1, 0.5 - (distance / maxRange) * 0.4);
+
       points.push({
         x: Math.cos(angle) * distance,
         y: Math.sin(angle) * distance,
-        z: 0,
-        intensity: 0.5 + seededRange(seed + 1, 0, 0.5),
+        z: seededRange(seed + 1, -0.1, 0.1),
+        intensity: intensity + seededRange(seed + 2, -0.05, 0.05),
         timestamp,
       });
     }
