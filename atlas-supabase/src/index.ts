@@ -5,3 +5,4 @@ export { WorldModel, SpatialIndex } from './world';
 export { KnowledgeGraph, GraphQueries } from './knowledge';
 export { EventStore, EventBusSupabase } from './events';
 export type * from './types';
+import "dotenv/config";
