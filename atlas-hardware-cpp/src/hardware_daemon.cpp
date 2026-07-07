@@ -12,6 +12,9 @@
 #include "atlas_hardware/Drivers/Device/SharedMemoryManager.h"
 #include "atlas_hardware/HAL/HardwareAbstractionLayer.h"
 #include "atlas_hardware/Bridge/HardwareBridge.h"
+#ifdef ATLAS_HAS_ROS2
+#include "atlas_hardware/Bridge/ROS2Bridge.h"
+#endif
 
 using namespace atlas;
 
@@ -132,6 +135,9 @@ class HardwareDaemon {
   std::shared_ptr<V4L2CameraDriver> camera_;
   std::unique_ptr<SharedMemoryManager> cameraShm_;
   size_t cameraFrameSize_ = 0;
+#ifdef ATLAS_HAS_ROS2
+  std::unique_ptr<ROS2Bridge> ros2_;
+#endif
 
 public:
   HardwareDaemon() {
@@ -154,6 +160,15 @@ public:
     hal_.registerDriver(gps_);
     hal_.registerDriver(motor_);
     hal_.registerDriver(camera_);
+
+#ifdef ATLAS_HAS_ROS2
+    ros2_ = std::make_unique<ROS2Bridge>(gps_, motor_, camera_);
+    if (ros2_->start()) {
+      std::cout << "[Daemon] ROS2 bridge active" << std::endl;
+    } else {
+      std::cout << "[Daemon] ROS2 bridge not available" << std::endl;
+    }
+#endif
   }
 
   std::string handleCommand(const std::string& cmdLine) {

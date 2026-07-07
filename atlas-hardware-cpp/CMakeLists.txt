@@ -21,9 +21,25 @@ include_directories(include)
 add_library(atlas_hardware INTERFACE)
 target_include_directories(atlas_hardware INTERFACE include)
 
+# ---- Optional ROS2 support ----
+find_package(rclcpp QUIET)
+find_package(sensor_msgs QUIET)
+find_package(geometry_msgs QUIET)
+
+if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND)
+  add_definitions(-DATLAS_HAS_ROS2)
+  message(STATUS "ROS2 found — building ROS2Bridge")
+  set(ROS2_SOURCES src/ROS2Bridge.cpp)
+  set(ROS2_LIBS rclcpp::rclcpp sensor_msgs::sensor_msgs geometry_msgs::geometry_msgs)
+else()
+  message(STATUS "ROS2 not found — ROS2Bridge will be a stub")
+  set(ROS2_SOURCES)
+  set(ROS2_LIBS)
+endif()
+
 # Hardware daemon executable (JSON IPC bridge for TS/Python)
-add_executable(atlas_hardware_daemon src/hardware_daemon.cpp)
-target_link_libraries(atlas_hardware_daemon PRIVATE atlas_hardware)
+add_executable(atlas_hardware_daemon src/hardware_daemon.cpp ${ROS2_SOURCES})
+target_link_libraries(atlas_hardware_daemon PRIVATE atlas_hardware ${ROS2_LIBS})
 
 # Collect all test sources
 file(GLOB_RECURSE TEST_SOURCES tests/*.cpp)
