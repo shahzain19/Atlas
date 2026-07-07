@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../Interfaces/BaseDriver.h"
+#include "SharedMemoryManager.h"
 #include <string>
 #include <vector>
 #include <cstdint>
@@ -10,6 +11,7 @@
 #include <cmath>
 #include <cstring>
 #include <algorithm>
+#include <sstream>
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -39,38 +41,42 @@ class V4L2CameraDriver : public BaseDriver {
   uint32_t width_ = 640;
   uint32_t height_ = 480;
   bool useV4l2_ = false;
+  bool fallbackFrameReady_ = false;
   CameraFrame lastFallbackFrame_;
+  std::mt19937 fallbackRng_{42};
+  SharedMemoryManager* shm_ = nullptr;
 
-  void generateFallbackFrame() {
+  void ensureFallbackFrame() {
+    if (fallbackFrameReady_) return;
     size_t frameSize = static_cast<size_t>(width_) * height_ * 3;
     std::vector<uint8_t> buffer(frameSize);
     const int horizonY = static_cast<int>(height_ * 0.55);
     const int sunX = static_cast<int>(width_ * 0.7);
     const int sunY = static_cast<int>(height_ * 0.15);
     const int sunRadius = 12;
+    const float invRngMax = 1.0f / static_cast<float>(std::mt19937::max());
 
     for (int y = 0; y < static_cast<int>(height_); y++) {
       for (int x = 0; x < static_cast<int>(width_); x++) {
         size_t idx = (static_cast<size_t>(y) * width_ + x) * 3;
         int r, g, b;
-        int seed = x * 1000 + y;
-        std::mt19937 rng(seed);
-        std::uniform_real_distribution<float> noise(-5, 5);
+        float nx = fallbackRng_() * invRngMax;
+        float ny = fallbackRng_() * invRngMax;
 
         if (y < horizonY - 2) {
           float skyGrad = static_cast<float>(y) / (horizonY - 2);
-          r = static_cast<int>(60 + skyGrad * 80 + noise(rng));
-          g = static_cast<int>(120 + skyGrad * 100 + noise(rng));
-          b = static_cast<int>(180 + skyGrad * 75 + noise(rng));
+          r = static_cast<int>(60 + skyGrad * 80 + nx * 10 - 5);
+          g = static_cast<int>(120 + skyGrad * 100 + ny * 10 - 5);
+          b = static_cast<int>(180 + skyGrad * 75 + (fallbackRng_() * invRngMax) * 10 - 5);
         } else if (y > horizonY + 2) {
           float groundGrad = static_cast<float>(y - horizonY) / (height_ - horizonY);
-          r = static_cast<int>(80 + groundGrad * 40 + noise(rng) * 1.6f);
-          g = static_cast<int>(130 - groundGrad * 30 + noise(rng) * 1.6f);
-          b = static_cast<int>(50 + groundGrad * 10 + noise(rng));
+          r = static_cast<int>(80 + groundGrad * 40 + nx * 16 - 8);
+          g = static_cast<int>(130 - groundGrad * 30 + ny * 16 - 8);
+          b = static_cast<int>(50 + groundGrad * 10 + (fallbackRng_() * invRngMax) * 10 - 5);
         } else {
-          r = static_cast<int>(80 + noise(rng) * 2);
-          g = static_cast<int>(80 + noise(rng) * 2);
-          b = static_cast<int>(80 + noise(rng) * 2);
+          r = static_cast<int>(80 + nx * 20 - 10);
+          g = static_cast<int>(80 + ny * 20 - 10);
+          b = static_cast<int>(80 + (fallbackRng_() * invRngMax) * 20 - 10);
         }
 
         int dx = x - sunX, dy = y - sunY;
@@ -91,12 +97,10 @@ class V4L2CameraDriver : public BaseDriver {
     }
 
     for (int c = 0; c < 3; c++) {
-      std::mt19937 crng(c * 777);
-      std::uniform_real_distribution<float> cdist(0, 1);
-      int cx = static_cast<int>(cdist(crng) * width_);
-      int cy = static_cast<int>(cdist(crng) * horizonY * 0.6f);
-      int cw = 30 + static_cast<int>(cdist(crng) * 40);
-      int ch = 10 + static_cast<int>(cdist(crng) * 15);
+      int cx = static_cast<int>((fallbackRng_() * invRngMax) * width_);
+      int cy = static_cast<int>((fallbackRng_() * invRngMax) * horizonY * 0.6f);
+      int cw = 30 + static_cast<int>((fallbackRng_() * invRngMax) * 40);
+      int ch = 10 + static_cast<int>((fallbackRng_() * invRngMax) * 15);
       for (int dy = -ch; dy <= ch; dy++) {
         for (int dx = -cw; dx <= cw; dx++) {
           float dist = std::hypot(static_cast<float>(dx) / cw, static_cast<float>(dy) / ch);
@@ -118,6 +122,7 @@ class V4L2CameraDriver : public BaseDriver {
     lastFallbackFrame_.channels = 3;
     lastFallbackFrame_.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::system_clock::now().time_since_epoch()).count();
+    fallbackFrameReady_ = true;
   }
 
 public:
@@ -125,7 +130,6 @@ public:
                    std::string name = "V4L2Camera",
                    std::string devicePath = "/dev/video0")
     : id_(std::move(id)), name_(std::move(name)), devicePath_(std::move(devicePath)) {
-    generateFallbackFrame();
   }
 
   std::string id() const override { return id_; }
@@ -212,7 +216,7 @@ public:
 
   CameraFrame captureFrame() {
     if (!useV4l2_ || fd_ < 0) {
-      generateFallbackFrame();
+      ensureFallbackFrame();
       return lastFallbackFrame_;
     }
 
@@ -222,7 +226,7 @@ public:
     buf.memory = V4L2_MEMORY_MMAP;
 
     if (ioctl(fd_, VIDIOC_DQBUF, &buf) < 0) {
-      generateFallbackFrame();
+      ensureFallbackFrame();
       return lastFallbackFrame_;
     }
 
@@ -241,12 +245,26 @@ public:
     frame.channels = 3;
     frame.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::system_clock::now().time_since_epoch()).count();
+
+    if (shm_) {
+      shm_->write(frame.data.data(), frame.data.size());
+    }
+
     return frame;
   }
 
   void setResolution(uint32_t width, uint32_t height) {
     width_ = width;
     height_ = height;
+  }
+
+  uint32_t width() const { return width_; }
+  uint32_t height() const { return height_; }
+
+  void setSharedMemory(SharedMemoryManager* shm) { shm_ = shm; }
+
+  std::string sharedMemoryName() const {
+    return shm_ ? shm_->name() : "";
   }
 };
 

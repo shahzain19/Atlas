@@ -27,7 +27,9 @@ export class CppBridgeDaemon {
   private daemonPath: string;
 
   constructor(daemonPath?: string) {
-    this.daemonPath = daemonPath ?? path.resolve(__dirname, "../../atlas-hardware-cpp/build/atlas_hardware_daemon");
+    this.daemonPath = daemonPath
+      ?? process.env.ATLAS_DAEMON_PATH
+      ?? path.resolve(__dirname, "../../atlas-hardware-cpp/build/atlas_hardware_daemon");
   }
 
   async start(): Promise<void> {
@@ -140,14 +142,27 @@ export class CppCameraSensor implements Sensor {
 
   constructor(private daemon: CppBridgeDaemon) { }
 
-  async read(): Promise<{ width: number; height: number; channels: number; timestamp: number }> {
+  async read(): Promise<{ width: number; height: number; channels: number; timestamp: number; pixels?: Uint8Array }> {
     const res = await this.daemon.sendCommand("camera_capture");
     if (!res.ok) throw new Error(`C++ Camera error: ${res.error}`);
+
+    let pixels: Uint8Array | undefined;
+    if (res.data.shm_name) {
+      try {
+        const fs = await import("fs");
+        const buf = fs.readFileSync(`/dev/shm${res.data.shm_name}`);
+        pixels = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+      } catch {
+        // SHM read failed — return metadata only
+      }
+    }
+
     return {
       width: res.data.width,
       height: res.data.height,
       channels: res.data.channels,
       timestamp: res.data.timestamp,
+      pixels,
     };
   }
 }

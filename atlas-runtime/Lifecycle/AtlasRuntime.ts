@@ -26,7 +26,7 @@ import { Configuration } from "../Configuration/Configuration";
 import { Logger } from "../Logging/Logger";
 import { PluginManager } from "../PluginManager/PluginManager";
 import { HardwareAbstractionLayer } from "../../atlas-hardware_deprecated/HAL/HardwareAbstractionLayer";
-import { HardwareBridge, createDefaultHardwareStack } from "../../atlas-hardware_deprecated/Bridge/HardwareBridge";
+import { HardwareBridge, createDefaultHardwareStack, tryInitCppBridge, HardwareMode, HardwareStackConfig } from "../../atlas-hardware_deprecated/Bridge/HardwareBridge";
 import { EventHistory } from "../../atlas-memory/History/EventHistory";
 import { GridMap } from "../../atlas-memory/Map/GridMap";
 import { ObjectDatabase } from "../../atlas-memory/Objects/ObjectDatabase";
@@ -63,6 +63,7 @@ export class AtlasRuntime {
   private bridge: HardwareBridge;
   private eventHistory: EventHistory;
   private gridMap: GridMap;
+  private cppDaemon: import("../../atlas-hardware_deprecated/Bridge/CppBridge").CppBridgeDaemon | null = null;
   private objectDb: ObjectDatabase;
   private obstacleTracker: ObstacleTracker;
   private humanTracker: HumanTracker;
@@ -71,7 +72,7 @@ export class AtlasRuntime {
   private _semanticMap: SemanticMap;
   private active = false;
 
-  constructor() {
+  constructor(options?: { hardwareMode?: HardwareMode; gpsPort?: string; motorPort?: string }) {
     this.eventBus = new EventBus();
     this.scheduler = new Scheduler();
     this.taskManager = new TaskManager();
@@ -100,7 +101,14 @@ export class AtlasRuntime {
     this.robotState = new RobotState();
     this.sceneGraph = new SceneGraph();
     this._semanticMap = new SemanticMap();
-    const stack = createDefaultHardwareStack(this.hardwareManager);
+
+    const mode = options?.hardwareMode || (process.env.ATLAS_HARDWARE_MODE as HardwareMode) || "simulation";
+    const hwConfig: HardwareStackConfig = {
+      mode,
+      gpsPort: options?.gpsPort || process.env.ATLAS_GPS_PORT,
+      motorPort: options?.motorPort || process.env.ATLAS_MOTOR_PORT,
+    };
+    const stack = createDefaultHardwareStack(this.hardwareManager, hwConfig);
     this.hal = stack.hal;
     this.bridge = stack.bridge;
 
@@ -308,10 +316,20 @@ export class AtlasRuntime {
     this.decisionRouter.handle(enrichedEvent);
   }
 
-  start() {
+  async start() {
     if (this.active) return;
     console.log("⚡ Atlas Runtime Starting...");
     this.active = true;
+
+    // Attempt to connect C++ hardware daemon
+    try {
+      this.cppDaemon = await tryInitCppBridge(this.hardwareManager);
+      if (this.cppDaemon) {
+        console.log("[AtlasRuntime] C++ hardware daemon connected, real hardware active");
+      }
+    } catch {
+      // Daemon is optional — stay in simulation mode
+    }
 
     this.scheduler.onTick((dt) => {
       this.tick(dt);

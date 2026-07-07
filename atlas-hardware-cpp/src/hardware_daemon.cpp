@@ -9,6 +9,7 @@
 #include "atlas_hardware/Drivers/Device/NMEAGPSSensor.h"
 #include "atlas_hardware/Drivers/Device/SerialMotorController.h"
 #include "atlas_hardware/Drivers/Device/V4L2CameraDriver.h"
+#include "atlas_hardware/Drivers/Device/SharedMemoryManager.h"
 #include "atlas_hardware/HAL/HardwareAbstractionLayer.h"
 #include "atlas_hardware/Bridge/HardwareBridge.h"
 
@@ -129,12 +130,26 @@ class HardwareDaemon {
   std::shared_ptr<NMEAGPSSensor> gps_;
   std::shared_ptr<SerialMotorController> motor_;
   std::shared_ptr<V4L2CameraDriver> camera_;
+  std::unique_ptr<SharedMemoryManager> cameraShm_;
+  size_t cameraFrameSize_ = 0;
 
 public:
   HardwareDaemon() {
     gps_ = std::make_shared<NMEAGPSSensor>();
     motor_ = std::make_shared<SerialMotorController>();
     camera_ = std::make_shared<V4L2CameraDriver>();
+
+    // Set up shared memory for camera frames (640x480 RGB = 921600 bytes)
+    cameraFrameSize_ = static_cast<size_t>(camera_->width()) *
+                       camera_->height() * 3;
+    try {
+      cameraShm_ = std::make_unique<SharedMemoryManager>("/atlas_camera_frame");
+      cameraShm_->create(cameraFrameSize_);
+      camera_->setSharedMemory(cameraShm_.get());
+    } catch (const std::exception& e) {
+      // Shared memory is optional — frames will be metadata-only
+      std::cerr << "Camera SHM unavailable: " << e.what() << std::endl;
+    }
 
     hal_.registerDriver(gps_);
     hal_.registerDriver(motor_);
@@ -236,13 +251,18 @@ public:
     if (cmd == "camera_capture") {
       try {
         auto frame = camera_->captureFrame();
-        return respond(okResponse(jsonObject({
+        auto shmName = camera_->sharedMemoryName();
+        std::vector<std::string> pairs = {
           jsonPair("width", jsonVal(frame.width)),
           jsonPair("height", jsonVal(frame.height)),
           jsonPair("channels", jsonVal(frame.channels)),
           jsonPair("size", jsonVal(frame.data.size())),
           jsonPair("timestamp", jsonVal(frame.timestamp))
-        })));
+        };
+        if (!shmName.empty()) {
+          pairs.push_back(jsonPair("shm_name", jsonStr(shmName)));
+        }
+        return respond(okResponse(jsonObject(pairs)));
       } catch (const std::exception& e) {
         return respond(errorResponse(e.what()));
       }

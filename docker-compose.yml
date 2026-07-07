@@ -1,6 +1,21 @@
 version: "3.9"
 
 services:
+  hardware-daemon:
+    build:
+      context: atlas-hardware-cpp
+    devices:
+      - "/dev/video0:/dev/video0"
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+      - "/dev/ttyACM0:/dev/ttyACM0"
+    volumes:
+      - "/dev/shm:/dev/shm"
+    tmpfs:
+      - /dev/shm:size=64M
+    environment:
+      - ATLAS_HARDWARE_DAEMON_PORT=9000
+    restart: unless-stopped
+
   runtime:
     build:
       context: .

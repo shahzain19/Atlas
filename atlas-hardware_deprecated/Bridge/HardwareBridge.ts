@@ -5,6 +5,9 @@ import { Actuator, Sensor } from "../../atlas-kernel/Hardware/Hardware";
 import { NMEAGPSSensor, NMEAGPSSensorAdapter } from "../Drivers/Devices/NMEAGPSSensor";
 import { SerialMotorActuator, SerialMotorController } from "../Drivers/Devices/SerialMotorActuator";
 import { CppBridgeDaemon, CppGPSSensor, CppMotorActuator, CppCameraSensor } from "./CppBridge";
+import { HardwareMode, createTransport } from "../Transport/SerialTransport";
+
+export type { HardwareMode };
 
 export interface HardwareDeviceBundle {
   driver: BaseDriver;
@@ -52,7 +55,18 @@ export class HardwareBridge {
   }
 }
 
-export function createDefaultHardwareStack(hardwareManager: HardwareManager): {
+export interface HardwareStackConfig {
+  mode?: HardwareMode;
+  gpsPort?: string;
+  gpsBaud?: number;
+  motorPort?: string;
+  motorBaud?: number;
+}
+
+export function createDefaultHardwareStack(
+  hardwareManager: HardwareManager,
+  config: HardwareStackConfig = {}
+): {
   hal: HardwareAbstractionLayer;
   bridge: HardwareBridge;
   gps: NMEAGPSSensor;
@@ -60,11 +74,16 @@ export function createDefaultHardwareStack(hardwareManager: HardwareManager): {
   motor: SerialMotorController;
   motorActuator: SerialMotorActuator;
 } {
+  const mode = config.mode || "simulation";
   const hal = new HardwareAbstractionLayer();
   const bridge = new HardwareBridge(hal, hardwareManager);
-  const gps = new NMEAGPSSensor();
+
+  const gpsTransport = createTransport(mode, config.gpsPort, config.gpsBaud);
+  const gps = new NMEAGPSSensor("gps-001", "NMEAGPS", gpsTransport);
   const gpsSensor = new NMEAGPSSensorAdapter(gps);
-  const motor = new SerialMotorController();
+
+  const motorTransport = createTransport(mode, config.motorPort, config.motorBaud);
+  const motor = new SerialMotorController("motor-001", "SerialMotor", motorTransport);
   const motorActuator = new SerialMotorActuator(motor);
 
   bridge.registerBundle({ driver: gps, sensor: gpsSensor });

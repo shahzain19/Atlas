@@ -10,6 +10,18 @@ export interface SerialTransport {
   isOpen(): boolean;
 }
 
+export type HardwareMode = "simulation" | "real" | "hybrid";
+
+export function createTransport(mode: HardwareMode, devicePath?: string, baudRate?: number): SerialTransport {
+  if (mode === "real" || mode === "hybrid") {
+    if (devicePath && devicePath.includes(":")) {
+      return new TcpSerialTransport();
+    }
+    return new NativeSerialTransport();
+  }
+  return new MemorySerialTransport();
+}
+
 /**
  * In-memory serial transport for tests and simulation.
  */
@@ -92,6 +104,64 @@ export class TcpSerialTransport implements SerialTransport {
     if (!this.socket || !this.openState) throw new Error("Serial transport is not open");
     await new Promise<void>((resolve, reject) => {
       this.socket!.write(Buffer.from(data), (err) => (err ? reject(err) : resolve()));
+    });
+  }
+
+  onData(callback: (data: Uint8Array) => void): void {
+    this.callback = callback;
+  }
+
+  isOpen(): boolean {
+    return this.openState;
+  }
+}
+
+/**
+ * Native Linux serial transport using /dev/tty* with stty for baud rate config.
+ * Falls back to MemorySerialTransport if the device cannot be opened.
+ */
+export class NativeSerialTransport implements SerialTransport {
+  private fd?: number;
+  private callback?: (data: Uint8Array) => void;
+  private openState = false;
+  private readStream?: import("fs").ReadStream;
+
+  async open(port: string, baudRate: number, _options?: SerialTransportOptions): Promise<void> {
+    try {
+      const { open } = await import("fs/promises");
+      const { execSync } = await import("child_process");
+      try {
+        execSync(`stty -F "${port}" ${baudRate} raw -echo 2>/dev/null`);
+      } catch {
+        // stty may fail if not on Linux or port not available; continue anyway
+      }
+      this.fd = await open(port, "r+") as unknown as number;
+      const fs = await import("fs");
+      this.readStream = fs.createReadStream(port, { fd: this.fd });
+      this.readStream.on("data", (chunk: Buffer) => {
+        this.callback?.(new Uint8Array(chunk));
+      });
+      this.openState = true;
+    } catch {
+      throw new Error(`Cannot open serial port: ${port}`);
+    }
+  }
+
+  async close(): Promise<void> {
+    this.readStream?.close();
+    this.readStream = undefined;
+    this.fd = undefined;
+    this.openState = false;
+  }
+
+  async write(data: Uint8Array): Promise<void> {
+    if (!this.openState || this.fd === undefined) throw new Error("Serial transport is not open");
+    const fs = await import("fs");
+    await new Promise<void>((resolve, reject) => {
+      const buf = Buffer.from(data);
+      fs.write(this.fd!, buf, 0, buf.length, undefined, (err) => {
+        err ? reject(err) : resolve();
+      });
     });
   }
 
