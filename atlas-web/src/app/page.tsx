@@ -144,7 +144,7 @@ await drone.returnHome();`}
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-20">
           {stats.map(([number, label]) => (
-            <div className="border border-zinc-800 rounded-2xl p-8">
+            <div key={number} className="border border-zinc-800 rounded-2xl p-8">
               <h3 className="text-4xl font-semibold">{number}</h3>
 
               <p className="mt-3 text-zinc-400">{label}</p>
@@ -168,7 +168,7 @@ await drone.returnHome();`}
               const Icon = item.icon;
 
               return (
-                <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-7">
+                <div key={item.title} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-7">
                   <Icon className="text-green-400" />
 
                   <h3 className="text-xl font-medium mt-5">{item.title}</h3>
@@ -242,7 +242,7 @@ Drones
 
           <div className="grid md:grid-cols-4 gap-5 mt-10">
             {["Python", "JavaScript", "Go", "Rust"].map((lang) => (
-              <div className="border border-zinc-800 rounded-xl p-8">
+              <div key={lang} className="border border-zinc-800 rounded-xl p-8">
                 <Terminal className="text-green-400" />
 
                 <h3 className="text-xl mt-5">{lang}</h3>
