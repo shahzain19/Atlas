@@ -1,4 +1,4 @@
-import { DeepReasoningEngine, ReasoningResult, AnalysisResult, PredictionResult, LearningResult } from "../../atlas-ai/Reasoning/DeepReasoning";
+import { DeepReasoningEngine, ReasoningResult, AnalysisResult, PredictionResult, LearningResult } from "../../atlas-ai_deprecated/Reasoning/DeepReasoning";
 
 describe("DeepReasoningEngine", () => {
   let reasoningEngine: DeepReasoningEngine;

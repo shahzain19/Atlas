@@ -1,7 +1,7 @@
-import { NMEAGPSSensor, NMEAGPSSensorAdapter } from "../../atlas-hardware/Drivers/Devices/NMEAGPSSensor";
+import { NMEAGPSSensor, NMEAGPSSensorAdapter } from "../../atlas-hardware_deprecated/Drivers/Devices/NMEAGPSSensor";
 import { HardwareManager } from "../../atlas-runtime/HardwareManager/HardwareManager";
-import { HardwareBridge } from "../../atlas-hardware/Bridge/HardwareBridge";
-import { HardwareAbstractionLayer } from "../../atlas-hardware/HAL/HardwareAbstractionLayer";
+import { HardwareBridge } from "../../atlas-hardware_deprecated/Bridge/HardwareBridge";
+import { HardwareAbstractionLayer } from "../../atlas-hardware_deprecated/HAL/HardwareAbstractionLayer";
 
 describe("NMEAGPSSensor", () => {
   it("parses NMEA and exposes sensor reads", async () => {

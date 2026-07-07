@@ -1,7 +1,7 @@
-import { PerceptionPipeline } from "../../atlas-perception/PerceptionPipeline";
-import { CameraSensor } from "../../atlas-perception/Camera/CameraSensor";
-import { LidarSensor } from "../../atlas-perception/Lidar/LidarSensor";
-import { ObjectDetector } from "../../atlas-perception/ObjectDetection/ObjectDetector";
+import { PerceptionPipeline } from "../../atlas-perception_deprecated/PerceptionPipeline";
+import { CameraSensor } from "../../atlas-perception_deprecated/Camera/CameraSensor";
+import { LidarSensor } from "../../atlas-perception_deprecated/Lidar/LidarSensor";
+import { ObjectDetector } from "../../atlas-perception_deprecated/ObjectDetection/ObjectDetector";
 
 describe("PerceptionPipeline", () => {
   let pipeline: PerceptionPipeline;

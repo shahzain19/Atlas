@@ -8,6 +8,8 @@
 #include <thread>
 #include <random>
 #include <cmath>
+#include <cstring>
+#include <algorithm>
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -226,7 +228,7 @@ public:
 
     size_t frameSize = static_cast<size_t>(width_) * height_ * 3;
     std::vector<uint8_t> buffer(frameSize);
-    memcpy(buffer.data(), (uint8_t*)buf.m.userptr + buf.m.offset, std::min(frameSize, buf.bytesused));
+    memcpy(buffer.data(), (uint8_t*)buf.m.userptr + buf.m.offset, std::min<size_t>(frameSize, buf.bytesused));
 
     if (ioctl(fd_, VIDIOC_QBUF, &buf) < 0) {
       // buffer re-queue failed, fallback next time

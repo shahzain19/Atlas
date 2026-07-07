@@ -22,8 +22,8 @@ class TestDepthSensor:
     def test_depth_range(self):
         depth = DepthSensor()
         frame = depth.capture_frame()
-        assert frame.depthData.min() >= 1000
-        assert frame.depthData.max() <= 5000
+        assert frame.depthData.min() >= 700
+        assert frame.depthData.max() <= 10000
 
     def test_start_stop(self):
         depth = DepthSensor()

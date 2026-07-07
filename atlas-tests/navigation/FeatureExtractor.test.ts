@@ -1,5 +1,5 @@
-import { FeatureExtractor, ORBDetector, ORBDescriptorExtractor, BFMatcher } from "../../atlas-navigation/SLAM/FeatureExtractor";
-import { SLAMObservation } from "../../atlas-navigation/SLAM/SLAMTypes";
+import { FeatureExtractor, ORBDetector, ORBDescriptorExtractor, BFMatcher } from "../../atlas-navigation_deprecated/SLAM/FeatureExtractor";
+import { SLAMObservation } from "../../atlas-navigation_deprecated/SLAM/SLAMTypes";
 
 describe("FeatureExtractor", () => {
   let extractor: FeatureExtractor;

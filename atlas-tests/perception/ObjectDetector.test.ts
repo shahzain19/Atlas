@@ -1,5 +1,5 @@
-import { ObjectDetector } from "../../atlas-perception/ObjectDetection/ObjectDetector";
-import { CameraSensor } from "../../atlas-perception/Camera/CameraSensor";
+import { ObjectDetector } from "../../atlas-perception_deprecated/ObjectDetection/ObjectDetector";
+import { CameraSensor } from "../../atlas-perception_deprecated/Camera/CameraSensor";
 
 describe("ObjectDetector", () => {
   let detector: ObjectDetector;

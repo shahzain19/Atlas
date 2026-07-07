@@ -1,5 +1,5 @@
-import { RoutePlanner } from "../../atlas-navigation/RoutePlanning/RoutePlanner";
-import { Waypoint } from "../../atlas-navigation/RoutePlanning/RoutePlanner";
+import { RoutePlanner } from "../../atlas-navigation_deprecated/RoutePlanning/RoutePlanner";
+import { Waypoint } from "../../atlas-navigation_deprecated/RoutePlanning/RoutePlanner";
 
 describe("RoutePlanner", () => {
   let planner: RoutePlanner;

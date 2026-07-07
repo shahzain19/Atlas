@@ -1,6 +1,6 @@
 import { ModelManager } from "../../atlas-kernel/Models/ModelManager";
-import { CameraFrame } from "../../atlas-perception/Camera/CameraSensor";
-import { DetectedObject } from "../../atlas-perception/ObjectDetection/ObjectDetector";
+import { CameraFrame } from "../../atlas-perception_deprecated/Camera/CameraSensor";
+import { DetectedObject } from "../../atlas-perception_deprecated/ObjectDetection/ObjectDetector";
 
 export interface VisionBackendConfig {
   backend: "local" | "groq" | "auto";

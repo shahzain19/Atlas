@@ -1,4 +1,4 @@
-import { LidarSensor } from "../../atlas-perception/Lidar/LidarSensor";
+import { LidarSensor } from "../../atlas-perception_deprecated/Lidar/LidarSensor";
 
 describe("LidarSensor", () => {
   let lidar: LidarSensor;

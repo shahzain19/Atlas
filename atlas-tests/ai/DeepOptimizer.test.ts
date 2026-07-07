@@ -1,4 +1,4 @@
-import { DeepOptimizer, OptimizationResult } from "../../atlas-ai/Optimization/DeepOptimizer";
+import { DeepOptimizer, OptimizationResult } from "../../atlas-ai_deprecated/Optimization/DeepOptimizer";
 
 describe("DeepOptimizer", () => {
   let optimizer: DeepOptimizer;

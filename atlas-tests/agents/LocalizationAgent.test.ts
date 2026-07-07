@@ -1,6 +1,6 @@
 import { LocalizationAgent, Pose } from "../../atlas-agents/LocalizationAgent/LocalizationAgent";
-import { GPSData } from "../../atlas-perception/GPS/GPSSensor";
-import { IMUData } from "../../atlas-perception/IMU/IMUSensor";
+import { GPSData } from "../../atlas-perception_deprecated/GPS/GPSSensor";
+import { IMUData } from "../../atlas-perception_deprecated/IMU/IMUSensor";
 
 describe("LocalizationAgent", () => {
   it("should initialize with zero pose", () => {

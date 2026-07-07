@@ -1,8 +1,8 @@
 import { BaseAgent } from "../BaseAgent/BaseAgent";
 import { Event } from "../../atlas-kernel/Event/Event";
-import { Decision } from "../../atlas-ai/Decision/types";
-import { GPSData } from "../../atlas-perception/GPS/GPSSensor";
-import { IMUData } from "../../atlas-perception/IMU/IMUSensor";
+import { Decision } from "../../atlas-ai_deprecated/Decision/types";
+import { GPSData } from "../../atlas-perception_deprecated/GPS/GPSSensor";
+import { IMUData } from "../../atlas-perception_deprecated/IMU/IMUSensor";
 
 export interface Pose {
   x: number;

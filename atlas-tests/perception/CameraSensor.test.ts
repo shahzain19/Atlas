@@ -1,4 +1,4 @@
-import { CameraSensor } from "../../atlas-perception/Camera/CameraSensor";
+import { CameraSensor } from "../../atlas-perception_deprecated/Camera/CameraSensor";
 
 describe("CameraSensor", () => {
   let camera: CameraSensor;

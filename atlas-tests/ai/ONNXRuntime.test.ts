@@ -1,4 +1,4 @@
-import { ONNXRuntime, Tensor } from "../../atlas-ai/Inference/ONNXRuntime";
+import { ONNXRuntime, Tensor } from "../../atlas-ai_deprecated/Inference/ONNXRuntime";
 
 describe("ONNXRuntime", () => {
   let onnx: ONNXRuntime;

@@ -94,6 +94,34 @@ static std::string extractStr(const std::string& json, const std::string& key) {
   return "";
 }
 
+static std::string extractNumStr(const std::string& json, const std::string& key) {
+  auto pos = json.find(jsonStr(key));
+  if (pos == std::string::npos) return "";
+  pos = json.find(':', pos);
+  if (pos == std::string::npos) return "";
+  ++pos;
+  while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) ++pos;
+  std::string val;
+  while (pos < json.size() && json[pos] != ',' && json[pos] != '}' && json[pos] != '\n') {
+    val += json[pos];
+    ++pos;
+  }
+  return val;
+}
+
+static std::string extractSeq(const std::string& json) {
+  return extractNumStr(json, "_seq");
+}
+
+static std::string nextResponse(const std::string& data, const std::string& seq) {
+  if (seq.empty()) return data;
+  auto insertPos = data.find('{');
+  if (insertPos == 0) {
+    return "{" + jsonPair("_seq", seq) + "," + data.substr(1);
+  }
+  return data;
+}
+
 // ── Daemon class ──────────────────────────────────────────────────
 
 class HardwareDaemon {
@@ -114,10 +142,14 @@ public:
   }
 
   std::string handleCommand(const std::string& cmdLine) {
+    std::string seq = extractSeq(cmdLine);
+    auto respond = [&](const std::string& resp) -> std::string {
+      return nextResponse(resp, seq);
+    };
     std::string cmd = extractStr(cmdLine, "cmd");
-    if (cmd.empty()) return errorResponse("missing 'cmd' field");
+    if (cmd.empty()) return respond(errorResponse("missing 'cmd' field"));
 
-    if (cmd == "ping") return okResponse("\"pong\"");
+    if (cmd == "ping") return respond(okResponse("\"pong\""));
 
     if (cmd == "list_drivers") {
       auto infos = hal_.getAllHardwareInfo();
@@ -133,23 +165,23 @@ public:
           ))
         }));
       }
-      return okResponse(jsonArray(items));
+      return respond(okResponse(jsonArray(items)));
     }
 
     if (cmd == "initialize_all") {
       hal_.initializeAll();
-      return okBool(true);
+      return respond(okBool(true));
     }
 
     if (cmd == "shutdown_all") {
       hal_.shutdownAll();
-      return okBool(true);
+      return respond(okBool(true));
     }
 
     if (cmd == "gps_read") {
       try {
         auto fix = gps_->readFix();
-        return okResponse(jsonObject({
+        return respond(okResponse(jsonObject({
           jsonPair("lat", jsonVal(fix.lat)),
           jsonPair("lng", jsonVal(fix.lng)),
           jsonPair("alt", jsonVal(fix.alt)),
@@ -157,53 +189,69 @@ public:
           jsonPair("heading", jsonVal(fix.heading)),
           jsonPair("accuracy", jsonVal(fix.accuracy)),
           jsonPair("timestamp", jsonVal(fix.timestamp))
-        }));
+        })));
       } catch (const std::exception& e) {
-        return errorResponse(e.what());
+        return respond(errorResponse(e.what()));
       }
     }
 
     if (cmd == "gps_ingest") {
       std::string sentence = extractStr(cmdLine, "sentence");
-      if (sentence.empty()) return errorResponse("missing 'sentence' field");
+      if (sentence.empty()) return respond(errorResponse("missing 'sentence' field"));
+      if (sentence.back() != '\n') sentence += '\n';
       gps_->ingestNMEA(sentence);
-      return okBool(true);
+      return respond(okBool(true));
     }
 
     if (cmd == "motor_exec") {
       std::string command = extractStr(cmdLine, "command");
-      if (command.empty()) return errorResponse("missing 'command' field");
+      if (command.empty()) return respond(errorResponse("missing 'command' field"));
       std::unordered_map<std::string, double> params;
-      // Parse params from cmdLine - simple key=value pairs
-      auto ppos = cmdLine.find("\"params\"");
-      // For now, just execute with empty params
+      std::string paramsStr = extractStr(cmdLine, "params");
+      if (!paramsStr.empty()) {
+        auto p = paramsStr.find('\"');
+        while (p != std::string::npos) {
+          auto pe = paramsStr.find('\"', p + 1);
+          if (pe == std::string::npos) break;
+          std::string k = paramsStr.substr(p + 1, pe - p - 1);
+          auto colon = paramsStr.find(':', pe + 1);
+          if (colon == std::string::npos) break;
+          ++colon;
+          while (colon < paramsStr.size() && (paramsStr[colon] == ' ' || paramsStr[colon] == '\t')) ++colon;
+          auto end = paramsStr.find_first_of(",}", colon);
+          double v = 0;
+          try { v = std::stod(paramsStr.substr(colon, end - colon)); } catch (...) {}
+          params[k] = v;
+          p = paramsStr.find('\"', end);
+        }
+      }
       try {
         motor_->executeCommand(command, params);
-        return okBool(true);
+        return respond(okBool(true));
       } catch (const std::exception& e) {
-        return errorResponse(e.what());
+        return respond(errorResponse(e.what()));
       }
     }
 
     if (cmd == "camera_capture") {
       try {
         auto frame = camera_->captureFrame();
-        return okResponse(jsonObject({
+        return respond(okResponse(jsonObject({
           jsonPair("width", jsonVal(frame.width)),
           jsonPair("height", jsonVal(frame.height)),
           jsonPair("channels", jsonVal(frame.channels)),
           jsonPair("size", jsonVal(frame.data.size())),
           jsonPair("timestamp", jsonVal(frame.timestamp))
-        }));
+        })));
       } catch (const std::exception& e) {
-        return errorResponse(e.what());
+        return respond(errorResponse(e.what()));
       }
     }
 
     if (cmd == "driver_connect") {
       std::string id = extractStr(cmdLine, "id");
       auto driver = hal_.getDriver(id);
-      if (!driver) return errorResponse("driver not found: " + id);
+      if (!driver) return respond(errorResponse("driver not found: " + id));
       auto serialDrv = std::dynamic_pointer_cast<SerialPortDriver>(driver);
       if (serialDrv) {
         std::string port = extractStr(cmdLine, "port");
@@ -213,25 +261,27 @@ public:
       if (auto camDrv = std::dynamic_pointer_cast<V4L2CameraDriver>(driver)) {
         camDrv->openDevice();
       }
-      return okBool(true);
+      return respond(okBool(true));
     }
 
-    return errorResponse("unknown command: " + cmd);
+    return respond(errorResponse("unknown command: " + cmd));
   }
 
   void run() {
-    std::string line;
-    while (std::getline(std::cin, line)) {
+    char buf[65536];
+    while (std::fgets(buf, sizeof(buf), stdin)) {
+      std::string line(buf);
+      // strip trailing newline
+      while (!line.empty() && (line.back() == '\n' || line.back() == '\r')) line.pop_back();
       if (line.empty()) continue;
       std::string response = handleCommand(line);
-      std::cout << response << std::flush;
+      std::fputs(response.c_str(), stdout);
+      std::fflush(stdout);
     }
   }
 };
 
 int main() {
-  std::cin.sync_with_stdio(false);
-  std::cout.sync_with_stdio(false);
   HardwareDaemon daemon;
   daemon.run();
   return 0;

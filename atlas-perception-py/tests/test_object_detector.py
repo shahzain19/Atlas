@@ -13,7 +13,7 @@ class TestObjectDetectorDefaults:
         det = ObjectDetector()
         cfg = det.get_config()
         assert cfg["modelName"] == "atlas-blob-detector"
-        assert cfg["confidenceThreshold"] == 0.5
+        assert cfg["confidenceThreshold"] == 0.3
         assert cfg["iouThreshold"] == 0.5
         assert cfg["maxDetections"] == 20
 

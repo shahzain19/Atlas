@@ -1,5 +1,5 @@
-import { EnhancedLocalization } from "../../atlas-navigation/Localization/EnhancedLocalization";
-import { SLAMObservation, SLAMConfig } from "../../atlas-navigation/SLAM/SLAMTypes";
+import { EnhancedLocalization } from "../../atlas-navigation_deprecated/Localization/EnhancedLocalization";
+import { SLAMObservation, SLAMConfig } from "../../atlas-navigation_deprecated/SLAM/SLAMTypes";
 
 describe("EnhancedLocalization", () => {
   let localization: EnhancedLocalization;

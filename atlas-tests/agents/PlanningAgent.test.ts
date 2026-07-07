@@ -1,6 +1,6 @@
 import { PlanningAgent } from "../../atlas-agents/PlanningAgent/PlanningAgent";
 import { Event } from "../../atlas-kernel/Event/Event";
-import { Waypoint } from "../../atlas-navigation/RoutePlanning/RoutePlanner";
+import { Waypoint } from "../../atlas-navigation_deprecated/RoutePlanning/RoutePlanner";
 
 describe("PlanningAgent", () => {
   let agent: PlanningAgent;

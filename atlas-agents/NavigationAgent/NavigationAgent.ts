@@ -1,10 +1,10 @@
 import { BaseAgent } from "../BaseAgent/BaseAgent";
 import { Event } from "../../atlas-kernel/Event/Event";
-import { Decision } from "../../atlas-ai/Decision/types";
+import { Decision } from "../../atlas-ai_deprecated/Decision/types";
 import { AgentMessage } from "../../atlas-kernel/Communication/AgentMessage";
 import { AtlasRuntime } from "../../atlas-runtime/Lifecycle/AtlasRuntime";
-import { Waypoint, WaypointEntry } from "../../atlas-navigation/Waypoint/Waypoint";
-import { ObstacleAvoidance, Obstacle } from "../../atlas-navigation/Avoidance/ObstacleAvoidance";
+import { Waypoint, WaypointEntry } from "../../atlas-navigation_deprecated/Waypoint/Waypoint";
+import { ObstacleAvoidance, Obstacle } from "../../atlas-navigation_deprecated/Avoidance/ObstacleAvoidance";
 import { Vector3 } from "../../atlas-kernel/Perception/StateEstimate";
 
 // ---------------------------------------------------------------------------

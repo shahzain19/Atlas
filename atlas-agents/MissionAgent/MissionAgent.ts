@@ -1,6 +1,6 @@
 import { BaseAgent } from "../BaseAgent/BaseAgent";
 import { Event } from "../../atlas-kernel/Event/Event";
-import { Decision } from "../../atlas-ai/Decision/types";
+import { Decision } from "../../atlas-ai_deprecated/Decision/types";
 import { Mission } from "../../atlas-kernel/Mission/Mission";
 
 export class MissionAgent extends BaseAgent {

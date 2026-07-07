@@ -3,11 +3,11 @@
  */
 import { EventBus } from "../../atlas-kernel/Event/EventBus";
 import { WorldModel, WorldObject } from "../../atlas-memory/WorldModel/WorldModel";
-import { PerceptionPipeline } from "../../atlas-perception/PerceptionPipeline";
-import { DeepReasoningEngine, AnalysisResult } from "../../atlas-ai/Reasoning/DeepReasoning";
+import { PerceptionPipeline } from "../../atlas-perception_deprecated/PerceptionPipeline";
+import { DeepReasoningEngine, AnalysisResult } from "../../atlas-ai_deprecated/Reasoning/DeepReasoning";
 import { TaskPlanner } from "../../atlas-planning/TaskPlanner/TaskPlanner";
 import { Task, TaskStatus } from "../../atlas-kernel/Task/Task";
-import { NeuralNetwork } from "../../atlas-ai/Learning/NeuralNetwork";
+import { NeuralNetwork } from "../../atlas-ai_deprecated/Learning/NeuralNetwork";
 
 // Extend AnalysisResult to include summary
 interface ExtendedAnalysisResult extends AnalysisResult {

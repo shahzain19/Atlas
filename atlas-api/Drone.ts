@@ -1,6 +1,6 @@
 import { AtlasRuntime } from "../atlas-runtime/Lifecycle/AtlasRuntime";
-import { CameraSensor } from "../atlas-perception/Camera/CameraSensor";
-import { VisionProcessor } from "../atlas-ai/Vision/VisionProcessor";
+import { CameraSensor } from "../atlas-perception_deprecated/Camera/CameraSensor";
+import { VisionProcessor } from "../atlas-ai_deprecated/Vision/VisionProcessor";
 import { DroneStatus, GeoPosition, Position } from "./types";
 
 export interface DroneOptions {

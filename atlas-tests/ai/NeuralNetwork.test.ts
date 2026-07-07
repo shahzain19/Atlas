@@ -1,4 +1,4 @@
-import { NeuralNetwork } from "../../atlas-ai/Learning/NeuralNetwork";
+import { NeuralNetwork } from "../../atlas-ai_deprecated/Learning/NeuralNetwork";
 
 describe("NeuralNetwork", () => {
   describe("constructor", () => {

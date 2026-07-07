@@ -1,6 +1,6 @@
-import { CANBusDriver } from "../../atlas-hardware/Drivers/Real/CANBusDriver";
-import { MemoryCANTransport } from "../../atlas-hardware/Transport/CANTransport";
-import { HardwareStatus } from "../../atlas-hardware/HAL/HardwareAbstractionLayer";
+import { CANBusDriver } from "../../atlas-hardware_deprecated/Drivers/Real/CANBusDriver";
+import { MemoryCANTransport } from "../../atlas-hardware_deprecated/Transport/CANTransport";
+import { HardwareStatus } from "../../atlas-hardware_deprecated/HAL/HardwareAbstractionLayer";
 
 describe("CANBusDriver", () => {
   it("sends and receives CAN frames", async () => {

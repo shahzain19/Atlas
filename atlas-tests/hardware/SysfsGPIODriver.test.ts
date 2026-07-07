@@ -1,6 +1,6 @@
-import { SysfsGPIODriver } from "../../atlas-hardware/Drivers/Real/SysfsGPIODriver";
-import { MemoryGPIOBackend } from "../../atlas-hardware/Transport/GPIOBackend";
-import { GPIOMode, GPIOValue } from "../../atlas-hardware/Interfaces/GPIODriver";
+import { SysfsGPIODriver } from "../../atlas-hardware_deprecated/Drivers/Real/SysfsGPIODriver";
+import { MemoryGPIOBackend } from "../../atlas-hardware_deprecated/Transport/GPIOBackend";
+import { GPIOMode, GPIOValue } from "../../atlas-hardware_deprecated/Interfaces/GPIODriver";
 
 describe("SysfsGPIODriver", () => {
   it("reads and writes GPIO pins", async () => {

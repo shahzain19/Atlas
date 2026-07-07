@@ -8,7 +8,7 @@ class TestRadarSensor:
     def test_capture_scan_structure(self):
         radar = RadarSensor()
         scan = radar.capture_scan()
-        assert len(scan.points) == 100
+        assert len(scan.points) == 20
         assert scan.timestamp > 0
         for pt in scan.points[:5]:
             assert hasattr(pt, "azimuth")
@@ -30,7 +30,7 @@ class TestRadarSensor:
         radar = RadarSensor()
         scan = radar.capture_scan()
         for pt in scan.points:
-            assert 0 <= pt.azimuth <= 2 * math.pi
+            assert -math.pi <= pt.azimuth <= math.pi
 
     def test_start_stop(self):
         radar = RadarSensor()

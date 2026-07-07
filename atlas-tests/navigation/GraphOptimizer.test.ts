@@ -1,6 +1,6 @@
-import { GraphOptimizer, PoseGraphManager } from "../../atlas-navigation/SLAM/GraphOptimizer";
+import { GraphOptimizer, PoseGraphManager } from "../../atlas-navigation_deprecated/SLAM/GraphOptimizer";
 import { Vector3, Quaternion } from "../../atlas-kernel/Perception/StateEstimate";
-import { Pose } from "../../atlas-navigation/SLAM/SLAMTypes";
+import { Pose } from "../../atlas-navigation_deprecated/SLAM/SLAMTypes";
 
 describe("GraphOptimizer", () => {
   let optimizer: GraphOptimizer;

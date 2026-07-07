@@ -1,4 +1,4 @@
-import { PolicyEngine, RandomPolicy, Observation, Action } from "../../atlas-ai/Policy/PolicyEngine";
+import { PolicyEngine, RandomPolicy, Observation, Action } from "../../atlas-ai_deprecated/Policy/PolicyEngine";
 
 describe("PolicyEngine", () => {
   let engine: PolicyEngine;

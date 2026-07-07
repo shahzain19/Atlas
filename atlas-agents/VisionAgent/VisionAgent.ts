@@ -1,10 +1,10 @@
 import { BaseAgent } from "../BaseAgent/BaseAgent";
 import { Event } from "../../atlas-kernel/Event/Event";
-import { Decision } from "../../atlas-ai/Decision/types";
+import { Decision } from "../../atlas-ai_deprecated/Decision/types";
 import { AgentMessage } from "../../atlas-kernel/Communication/AgentMessage";
 import { AtlasRuntime } from "../../atlas-runtime/Lifecycle/AtlasRuntime";
-import { CameraSensor } from "../../atlas-perception/Camera/CameraSensor";
-import { ObjectDetector } from "../../atlas-perception/ObjectDetection/ObjectDetector";
+import { CameraSensor } from "../../atlas-perception_deprecated/Camera/CameraSensor";
+import { ObjectDetector } from "../../atlas-perception_deprecated/ObjectDetection/ObjectDetector";
 
 export class VisionAgent extends BaseAgent {
   readonly name = "VisionAgent";

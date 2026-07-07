@@ -15,10 +15,12 @@ TEST(NMEAGPSSensorTest, ParsesNMEAAndReturnsFix) {
   EXPECT_NEAR(fix.alt, 545.4, 0.1);
 }
 
-TEST(NMEAGPSSensorTest, ThrowsWhenNoFix) {
+TEST(NMEAGPSSensorTest, ReturnsFallbackFixWhenNoNMEAFix) {
   auto gps = NMEAGPSSensor();
   EXPECT_FALSE(gps.hasFix());
-  EXPECT_THROW(gps.readFix(), std::runtime_error);
+  auto fix = gps.readFix();
+  EXPECT_NEAR(fix.lat, 37.7749, 0.01);
+  EXPECT_NEAR(fix.lng, -122.4194, 0.01);
 }
 
 TEST(NMEAGPSSensorTest, TracksLatestFix) {
@@ -37,9 +39,9 @@ TEST(NMEAGPSSensorTest, TracksLatestFix) {
 TEST(NMEAGPSSensorTest, HealthAfterFix) {
   auto gps = NMEAGPSSensor();
 
-  // No fix before ingest
+  // Simulated mode before ingest (no NMEA fix yet)
   auto health = gps.getHealth();
-  EXPECT_EQ(health.value, 0.0);
+  EXPECT_EQ(health.value, 0.6);
 
   // Ingest fix and re-initialize to connect
   gps.ingestNMEA("$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\n");

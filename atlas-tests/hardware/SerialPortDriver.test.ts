@@ -1,6 +1,6 @@
-import { SerialPortDriver } from "../../atlas-hardware/Drivers/Real/SerialPortDriver";
-import { MemorySerialTransport } from "../../atlas-hardware/Transport/SerialTransport";
-import { HardwareStatus } from "../../atlas-hardware/HAL/HardwareAbstractionLayer";
+import { SerialPortDriver } from "../../atlas-hardware_deprecated/Drivers/Real/SerialPortDriver";
+import { MemorySerialTransport } from "../../atlas-hardware_deprecated/Transport/SerialTransport";
+import { HardwareStatus } from "../../atlas-hardware_deprecated/HAL/HardwareAbstractionLayer";
 
 describe("SerialPortDriver", () => {
   it("connects, sends, and receives data", async () => {

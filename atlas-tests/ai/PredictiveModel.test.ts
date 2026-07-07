@@ -1,4 +1,4 @@
-import { PredictiveModel, PredictionMetrics } from "../../atlas-ai/Prediction/PredictiveModel";
+import { PredictiveModel, PredictionMetrics } from "../../atlas-ai_deprecated/Prediction/PredictiveModel";
 
 describe("PredictiveModel", () => {
   let model: PredictiveModel;

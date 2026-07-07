@@ -1,6 +1,6 @@
-import { HardwareAbstractionLayer } from "../../atlas-hardware/HAL/HardwareAbstractionLayer";
-import { BaseDriver } from "../../atlas-hardware/Interfaces/BaseDriver";
-import { HardwareStatus } from "../../atlas-hardware/HAL/HardwareAbstractionLayer";
+import { HardwareAbstractionLayer } from "../../atlas-hardware_deprecated/HAL/HardwareAbstractionLayer";
+import { BaseDriver } from "../../atlas-hardware_deprecated/Interfaces/BaseDriver";
+import { HardwareStatus } from "../../atlas-hardware_deprecated/HAL/HardwareAbstractionLayer";
 
 class MockDriver implements BaseDriver {
   id: string = "mock-001";

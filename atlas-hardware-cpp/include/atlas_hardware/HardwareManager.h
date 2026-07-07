@@ -8,10 +8,6 @@
 namespace atlas {
 
 class HardwareManager {
-  std::unordered_map<std::string,
-    std::function<void(const std::string&, const std::unordered_map<std::string, double>&)>> actuators_;
-  std::unordered_map<std::string, std::function<GPSReading()>> sensors_;
-
 public:
   void registerActuator(const std::string& name, CapabilityType type,
                         std::function<void(const std::string&, const std::unordered_map<std::string, double>&)> execFn) {

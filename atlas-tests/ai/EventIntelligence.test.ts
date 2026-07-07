@@ -1,4 +1,4 @@
-import { EventIntelligence } from "../../atlas-ai/Intelligence/EventIntelligence";
+import { EventIntelligence } from "../../atlas-ai_deprecated/Intelligence/EventIntelligence";
 import { EventPriority } from "../../atlas-kernel/Event/Event";
 
 describe("EventIntelligence", () => {

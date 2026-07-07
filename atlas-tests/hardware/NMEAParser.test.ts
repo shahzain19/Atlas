@@ -1,4 +1,4 @@
-import { NMEAParser } from "../../atlas-hardware/Protocol/NMEAParser";
+import { NMEAParser } from "../../atlas-hardware_deprecated/Protocol/NMEAParser";
 
 describe("NMEAParser", () => {
   const parser = new NMEAParser();

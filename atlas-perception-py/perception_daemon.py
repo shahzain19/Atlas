@@ -13,6 +13,9 @@ from atlas_perception.camera.camera_sensor import CameraSensor
 from atlas_perception.lidar.lidar_sensor import LidarSensor
 from atlas_perception.detection.object_detector import ObjectDetector
 from atlas_perception.imu.imu_sensor import IMUSensor
+from atlas_perception.depth.depth_sensor import DepthSensor
+from atlas_perception.radar.radar_sensor import RadarSensor
+from atlas_perception.thermal.thermal_sensor import ThermalSensor
 
 WS_URL = os.environ.get("ATLAS_WS_URL", "ws://localhost:8080/api/ws")
 RECONNECT_BASE = 1
@@ -26,8 +29,11 @@ class PerceptionDaemon:
         self.lidar = LidarSensor()
         self.imu = IMUSensor()
         self.detector = ObjectDetector()
+        self.depth = DepthSensor()
+        self.radar = RadarSensor()
+        self.thermal = ThermalSensor()
         self._running = False
-        self._tick = {"gps": 0.0, "detect": 0.0, "imu": 0.0, "ping": 0.0}
+        self._tick = {"gps": 0.0, "detect": 0.0, "imu": 0.0, "depth": 0.0, "radar": 0.0, "thermal": 0.0, "ping": 0.0}
 
     async def start(self):
         self._running = True
@@ -35,6 +41,9 @@ class PerceptionDaemon:
         await self.camera.start()
         await self.lidar.start()
         await self.imu.start()
+        await self.depth.start()
+        await self.radar.start()
+        await self.thermal.start()
         print("[PerceptionDaemon] Sensors started")
 
     async def stop(self):
@@ -43,6 +52,9 @@ class PerceptionDaemon:
         await self.camera.stop()
         await self.lidar.stop()
         await self.imu.stop()
+        await self.depth.stop()
+        await self.radar.stop()
+        await self.thermal.stop()
         print("[PerceptionDaemon] Sensors stopped")
 
     async def run_cycle(self, ws):
@@ -59,10 +71,12 @@ class PerceptionDaemon:
                     "source": "PythonPerception",
                     "timestamp": int(now * 1000),
                     "payload": {
-                        "x": gps.latitude,
-                        "y": gps.longitude,
-                        "z": gps.altitude or 0.0,
-                        "uncertainty": (gps.accuracy or 2.5) / 10.0,
+                        "latitude": gps.latitude,
+                        "longitude": gps.longitude,
+                        "altitude": gps.altitude or 0.0,
+                        "speed": gps.speed or 0.0,
+                        "heading": gps.heading or 0.0,
+                        "accuracy": gps.accuracy or 2.5,
                     },
                 },
             }))
@@ -115,6 +129,66 @@ class PerceptionDaemon:
                         },
                     },
                 }))
+
+        # Depth @ 1Hz
+        if now - self._tick["depth"] >= 1.0:
+            self._tick["depth"] = now
+            depth = self.depth.capture_frame()
+            await ws.send(json.dumps({
+                "type": "emit_event",
+                "payload": {
+                    "type": "DEPTH_FRAME",
+                    "source": "PythonPerception",
+                    "timestamp": int(now * 1000),
+                    "payload": {
+                        "width": depth.width,
+                        "height": depth.height,
+                        "min_depth": int(depth.depthData.min()),
+                        "max_depth": int(depth.depthData.max()),
+                        "mean_confidence": float(depth.confidence.mean()),
+                    },
+                },
+            }))
+
+        # Radar @ 1Hz
+        if now - self._tick["radar"] >= 1.0:
+            self._tick["radar"] = now
+            radar = self.radar.capture_scan()
+            if radar.points:
+                closest = min(radar.points, key=lambda p: abs(p.range))
+                await ws.send(json.dumps({
+                    "type": "emit_event",
+                    "payload": {
+                        "type": "RADAR_SCAN",
+                        "source": "PythonPerception",
+                        "timestamp": int(now * 1000),
+                        "payload": {
+                            "num_targets": len(radar.points),
+                            "closest_range": closest.range,
+                            "closest_velocity": closest.velocity,
+                        },
+                    },
+                }))
+
+        # Thermal @ 1Hz
+        if now - self._tick["thermal"] >= 1.0:
+            self._tick["thermal"] = now
+            thermal = self.thermal.capture_frame()
+            await ws.send(json.dumps({
+                "type": "emit_event",
+                "payload": {
+                    "type": "THERMAL_FRAME",
+                    "source": "PythonPerception",
+                    "timestamp": int(now * 1000),
+                    "payload": {
+                        "width": thermal.width,
+                        "height": thermal.height,
+                        "min_temp": float(thermal.temperatureData.min()),
+                        "max_temp": float(thermal.temperatureData.max()),
+                        "mean_temp": float(thermal.temperatureData.mean()),
+                    },
+                },
+            }))
 
         # IMU @ 2Hz
         if now - self._tick["imu"] >= 0.5:

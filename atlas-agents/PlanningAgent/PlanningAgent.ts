@@ -1,8 +1,8 @@
 import { BaseAgent } from "../BaseAgent/BaseAgent";
 import { Event } from "../../atlas-kernel/Event/Event";
-import { Decision } from "../../atlas-ai/Decision/types";
+import { Decision } from "../../atlas-ai_deprecated/Decision/types";
 import { Task, TaskStatus } from "../../atlas-kernel/Task/Task";
-import { RoutePlanner, Waypoint } from "../../atlas-navigation/RoutePlanning/RoutePlanner";
+import { RoutePlanner, Waypoint } from "../../atlas-navigation_deprecated/RoutePlanning/RoutePlanner";
 import { uuidv4 } from "../../atlas-kernel/utils/uuid";
 
 export class PlanningAgent extends BaseAgent {

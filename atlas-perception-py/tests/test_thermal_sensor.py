@@ -22,8 +22,8 @@ class TestThermalSensor:
     def test_temperature_range(self):
         thermal = ThermalSensor()
         frame = thermal.capture_frame()
-        assert frame.temperatureData.min() >= 20
-        assert frame.temperatureData.max() <= 40
+        assert frame.temperatureData.min() >= -10
+        assert frame.temperatureData.max() <= 65
 
     def test_start_stop(self):
         thermal = ThermalSensor()

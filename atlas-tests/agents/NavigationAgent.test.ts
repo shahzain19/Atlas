@@ -1,6 +1,6 @@
 import { NavigationAgent } from "../../atlas-agents/NavigationAgent/NavigationAgent";
 import { AtlasRuntime } from "../../atlas-runtime/Lifecycle/AtlasRuntime";
-import { Waypoint } from "../../atlas-navigation/Waypoint/Waypoint";
+import { Waypoint } from "../../atlas-navigation_deprecated/Waypoint/Waypoint";
 
 // ---------------------------------------------------------------------------
 // Minimal runtime mock
