@@ -4,7 +4,9 @@ import time
 import hashlib
 from groq import AsyncGroq
 
-API_KEY = "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"
+API_KEY = os.environ.get("GROQ_API_KEY")
+if not API_KEY:
+    print("[GroqClient] GROQ_API_KEY not set — Groq API calls will fail")
 DEFAULT_MODEL = "llama-3.3-70b-versatile"
 CACHE_MAX = 256
 CACHE_TTL_S = 300

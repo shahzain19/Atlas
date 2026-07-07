@@ -1,6 +1,9 @@
 import Groq from "groq-sdk";
 
-const API_KEY = process.env.GROQ_API_KEY || "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";
+const API_KEY = process.env.GROQ_API_KEY;
+if (!API_KEY) {
+  console.warn("[GroqClient] GROQ_API_KEY not set — Groq API calls will fail");
+}
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";
 const CACHE_MAX = 256;
 const CACHE_TTL_MS = 5 * 60 * 1000;
