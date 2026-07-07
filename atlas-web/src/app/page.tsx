@@ -132,6 +132,14 @@ await drone.returnHome();`}
           </div>
         </section>
 
+        {/* DEMO VIDEO */}
+
+        <section className="mt-24">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950 overflow-hidden">
+            <video className="w-full h-auto" src="/demo.webm" controls autoPlay loop muted playsInline />
+          </div>
+        </section>
+
         {/* STATS */}
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-20">
