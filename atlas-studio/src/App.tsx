@@ -6,9 +6,10 @@ import AgentCard from './components/AgentCard'
 import TaskItem from './components/TaskItem'
 import MissionForm from './components/MissionForm'
 import MemoryGraph from './components/MemoryGraph'
+import CameraDashboard from './components/CameraDashboard'
 import './App.css'
 
-const TABS = ['dashboard', 'world', 'agents', 'planning', 'memory'] as const
+const TABS = ['dashboard', 'world', 'agents', 'planning', 'memory', 'camera'] as const
 type Tab = (typeof TABS)[number]
 
 function App() {
@@ -153,6 +154,8 @@ function App() {
           )}
 
           {activeTab === 'memory' && <MemoryGraph memory={snapshot.memory} />}
+
+          {activeTab === 'camera' && <CameraDashboard />}
         </main>
 
         <aside className="logs-panel">

@@ -41,6 +41,8 @@ endif()
 add_executable(atlas_hardware_daemon src/hardware_daemon.cpp ${ROS2_SOURCES})
 target_link_libraries(atlas_hardware_daemon PRIVATE atlas_hardware ${ROS2_LIBS})
 
+# Camera hardware demo is at: examples/camera-demo.ts
+
 # Collect all test sources
 file(GLOB_RECURSE TEST_SOURCES tests/*.cpp)
 

@@ -23,6 +23,7 @@
     "demo:pigeon": "npx tsx examples/demo-pigeon.ts",
     "demo:rover": "npx tsx examples/demo-rover.ts",
     "demo:rocket": "npx tsx examples/demo-rocket.ts",
+    "demo:camera": "npx tsx examples/camera-demo.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "build:cli": "tsc -p atlas-cli/tsconfig.json",
@@ -40,6 +41,7 @@
     "groq-sdk": "^1.3.0",
     "onnxruntime-node": "^1.27.0",
     "process": "^0.11.10",
+    "sharp": "^0.35.3",
     "ts-node": "^10.9.2",
     "uuid": "^14.0.1",
     "ws": "^8.18.3"
